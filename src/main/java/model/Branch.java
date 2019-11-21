@@ -13,6 +13,7 @@ public class Branch {
         return location;
     }
 
+
     public String getCity() {
         return city;
     }
