@@ -1,0 +1,6 @@
+CREATE TABLE Rent_Includes (
+    rid INT NOT NULL REFERENCES Rent(rid) ON DELETE CASCADE,
+    eid INT NOT NULL REFERENCES Equipment(eid) ON DELETE CASCADE,
+
+    PRIMARY KEY (rid, eid)
+)
