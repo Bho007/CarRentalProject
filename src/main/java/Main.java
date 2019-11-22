@@ -3,35 +3,57 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import jdbc.Query;
+import model.TimePeriod;
+import model.Vehicle;
+import model.VehicleStatus;
+import model.VehicleType;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import static jdbc.Query.*;
 
 //import static jdbc.FirstExample.x;
 
 public class Main extends Application {
-    // Database URL
-    private static final String DB_URL = "jdbc:postgresql://34.94.14.233:5432/postgres";
-
-    //  Database credentials
-    private static final String USER = "postgres";
-    private static final String PASS = "hunter2";
-
-    private static Connection conn;
-
 
     public static void main(String[] args) {
         System.out.println("Hello World");
-        launch();
-
-        askQuery("SELECT t.* FROM public.clubmember t");
-        //x();
+        //launch();
+        // Setup the connection
         try {
             Class.forName("org.postgresql.Driver");
             System.out.println("Connecting to database...");
             conn = DriverManager.getConnection(DB_URL, USER, PASS);
+            stmt = conn.createStatement();
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        System.out.println(getAllAvailableVehicles(null, "", null));
+
+
+        // Free up connection resources
+        if (conn != null) {
+            try {
+                stmt.close();
+                conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    assert (conn.isClosed() && stmt.isClosed());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        // TODO: Figure out how to remove this
+        System.exit(0);
+
     }
 
     @Override
@@ -44,31 +66,5 @@ public class Main extends Application {
         stage.show();
     }
 
-    public static void askQuery(String query) {
-        Statement stmt = null;
-        try {
-            //STEP 4: Execute a query
-            System.out.println("Creating statement...");
-            stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
 
-            //STEP 5: Extract data from result set
-            // TODO: Program data extraction
-
-            rs.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            //finally block used to close resources
-            try {
-                if (stmt != null)
-                    stmt.close();
-            } catch (SQLException se2) {
-                se2.printStackTrace();
-            }
-
-        }
-        System.out.println("Goodbye!");
-    }
 }
