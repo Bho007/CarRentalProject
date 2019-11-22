@@ -1,0 +1,987 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Group?>
+<?import javafx.scene.control.Accordion?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Pagination?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.UIController">
+   <left>
+      <AnchorPane fx:id="menuPane" BorderPane.alignment="CENTER">
+         <children>
+            <VBox alignment="TOP_CENTER" layoutX="21.0" layoutY="14.0" spacing="10.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <children>
+                  <HBox>
+                     <children>
+                        <Label text="Customer Actions">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </HBox>
+                  <HBox>
+                     <children>
+                        <Button fx:id="viewVehiclesButton" mnemonicParsing="false" onAction="#viewVehicles" text="View Vehicles" />
+                     </children>
+                  </HBox>
+                  <HBox>
+                     <children>
+                        <Button fx:id="reserveVehicleButton" mnemonicParsing="false" onAction="#reserveVehicle" text="Reserve a Vehicle" HBox.hgrow="ALWAYS" />
+                     </children>
+                  </HBox>
+                  <HBox>
+                     <children>
+                        <Label text="Clerk Actions">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </HBox>
+                  <HBox>
+                     <children>
+                        <Button fx:id="rentVehicleButton" mnemonicParsing="false" onAction="#rentVehicle" text="Rent a Vehicle" />
+                     </children>
+                  </HBox>
+                  <HBox layoutX="20.0" layoutY="179.0">
+                     <children>
+                        <Button fx:id="returnVehicleButton" mnemonicParsing="false" onAction="#returnVehicle" text="Return a Vehicle" />
+                     </children>
+                  </HBox>
+                  <HBox>
+                     <children>
+                        <Button fx:id="generateReportButton" mnemonicParsing="false" onAction="#generateReport" text="Generate Report" />
+                     </children>
+                  </HBox>
+                  <HBox>
+                     <children>
+                        <Label text="Database Actions">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </HBox>
+                  <HBox>
+                     <children>
+                        <Button fx:id="viewEditDatabaseButton" mnemonicParsing="false" onAction="#viewEditDatabase" text="View/Edit Database" />
+                     </children>
+                  </HBox>
+               </children>
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </VBox>
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </AnchorPane>
+   </left>
+   <right>
+      <AnchorPane BorderPane.alignment="CENTER" />
+   </right>
+   <bottom>
+      <AnchorPane BorderPane.alignment="CENTER" />
+   </bottom>
+   <center>
+      <StackPane fx:id="globalPane" prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <children>
+            <AnchorPane fx:id="splashPane">
+               <children>
+                  <Label alignment="CENTER" layoutX="128.0" layoutY="192.0" text="Please make a selection on the left." AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="viewVehiclesPane" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label text="View Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                      <TitledPane fx:id="filterTitledPane" animated="false" text="Filter">
+                        <content>
+                          <AnchorPane fx:id="filterPane" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                 <children>
+                                    <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Type" />
+                                                <ComboBox fx:id="filterTypeComboBox" prefWidth="150.0" promptText="Any" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="10.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Location" />
+                                                <TextField fx:id="filterLocationTextField" promptText="Any" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                             <children>
+                                                <Label text="Availability">
+                                                   <font>
+                                                      <Font size="14.0" />
+                                                   </font>
+                                                   <padding>
+                                                      <Insets top="2.0" />
+                                                   </padding>
+                                                   <HBox.margin>
+                                                      <Insets />
+                                                   </HBox.margin>
+                                                </Label>
+                                             </children>
+                                             <VBox.margin>
+                                                <Insets top="5.0" />
+                                             </VBox.margin>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="40.0" spacing="10.0">
+                                             <children>
+                                                <Label layoutX="10.0" layoutY="14.0" text="From" />
+                                                <DatePicker fx:id="filterFromDatePicker" promptText="Any" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="92.0" spacing="10.0">
+                                             <children>
+                                                <Label layoutX="10.0" layoutY="14.0" text="To" />
+                                                <DatePicker fx:id="filterToDatePicker" promptText="Any" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </AnchorPane>
+                        </content>
+                      </TitledPane>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <Button fx:id="filterSearchButton" mnemonicParsing="false" onAction="#filterVehicles" text="Search" />
+                              <Label fx:id="filterSearchErrorLabel" style="-fx-border-color: red;" text="Error" visible="false">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                           </children>
+                        </HBox>
+                        <HBox fx:id="filterResultBox" spacing="10.0" visible="false">
+                           <children>
+                              <Label fx:id="filterResultSuccessLabel" text="Success">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                              <Hyperlink fx:id="filterResultViewAllHyperlink" text="View all" />
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="filterResultsPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label text="View Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                        <Pagination fx:id="filterVehiclesPage" maxPageIndicatorCount="5" pageCount="5" VBox.vgrow="ALWAYS" />
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="reserveVehicleTypeSelectionPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label text="Reserve Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                        <TitledPane fx:id="reserveVehicleTypeSelectionTitlePane" animated="false" collapsible="false" text="Vehicle Information">
+                           <content>
+                              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                 <children>
+                                    <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Type" />
+                                                <ComboBox fx:id="reserveVehicleSelectionTypeComboBox" prefWidth="150.0" promptText="Any" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="70.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Location" />
+                                                <TextField fx:id="reserveVehicleSelectionLocationTextField" promptText="Required" />
+                                             </children>
+                                             <VBox.margin>
+                                                <Insets />
+                                             </VBox.margin>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </AnchorPane>
+                           </content>
+                        </TitledPane>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <Button fx:id="reserveVehicleSelectionNextButton" mnemonicParsing="false" onAction="#processReservationVehicleType" text="Next" />
+                              <Label fx:id="reserveVehicleSelectionErrorLabel" style="-fx-border-color: red;" text="Error" visible="false">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="durationPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label text="Reserve Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                        <TitledPane fx:id="durationTitledPane" animated="false" collapsible="false" text="2: Rental Duration">
+                           <content>
+                              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                 <children>
+                                    <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="10.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Start Date" />
+                                                <DatePicker fx:id="durationStartDatePicker" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="40.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Start Time" />
+                                                <HBox>
+                                                   <children>
+                                                      <TextField fx:id="durationStartHourTextField" prefWidth="50.0" />
+                                                      <Label text=" : " />
+                                                      <TextField fx:id="durationStartMinuteTextField" prefWidth="50.0" />
+                                                   </children>
+                                                </HBox>
+                                                <ComboBox fx:id="durationStartPeriodComboBox" promptText="am" visibleRowCount="2" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="35.0" spacing="10.0">
+                                             <children>
+                                                <Label text="End Date" />
+                                                <DatePicker fx:id="durationEndDatePicker" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="65.0" spacing="10.0">
+                                             <children>
+                                                <Label text="End Time" />
+                                                <HBox>
+                                                   <children>
+                                                      <TextField fx:id="durationEndHourTextField" prefWidth="50.0" />
+                                                      <Label text=" : " />
+                                                      <TextField fx:id="durationEndMinuteTextField" prefWidth="50.0" />
+                                                   </children>
+                                                </HBox>
+                                                <ComboBox fx:id="durationEndPeriodComboBox" promptText="am" visibleRowCount="2" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </AnchorPane>
+                           </content>
+                        </TitledPane>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <Button fx:id="durationNextButton" mnemonicParsing="false" onAction="#processDuration" text="Next" />
+                              <Label fx:id="durationErrorLabel" style="-fx-border-color: red;" text="Error" visible="false">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="customerInformationPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label text="Reserve Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                        <TitledPane fx:id="customerInformationTitledPane" animated="false" collapsible="false" text="Customer Information">
+                           <content>
+                              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                 <children>
+                                    <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Phone" />
+                                                <TextField fx:id="customerInformationPhoneTextField" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="10.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Name" />
+                                                <TextField fx:id="customerInformationNameTextField" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="40.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Address" />
+                                                <TextField fx:id="customerInformationAddressTextField" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="70.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Driver's License" />
+                                                <TextField fx:id="customerInformationDriversLicenseTextField" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </AnchorPane>
+                           </content>
+                        </TitledPane>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <Button fx:id="customerInformationNextButton" mnemonicParsing="false" onAction="#processCustomerInformation" text="Next" />
+                              <Label fx:id="customerInformationErrorLabel" style="-fx-border-color: red;" text="Error" visible="false">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="rentVehicleInitialPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label text="Rent Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                        <VBox spacing="5.0">
+                           <children>
+                              <Group fx:id="rentVehicleInitialChoiceGroup">
+                                 <children>
+                                    <RadioButton fx:id="rentVehicleExistingReservationRadioButton" mnemonicParsing="false" selected="true" text="Existing Reservation">
+                                       <toggleGroup>
+                                          <ToggleGroup fx:id="rentalInitialization" />
+                                       </toggleGroup>
+                                    </RadioButton>
+                                    <RadioButton fx:id="rentVehicleNewCustomerRadioButton" layoutY="23.0" mnemonicParsing="false" text="New Customer" toggleGroup="$rentalInitialization" />
+                                 </children>
+                              </Group>
+                           </children>
+                        </VBox>
+                        <HBox fx:id="rentVehicleConfirmationBox" alignment="CENTER_LEFT" layoutX="20.0" layoutY="89.0" spacing="10.0">
+                           <children>
+                              <Label text="Confirmation/Phone Number">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                              <TextField fx:id="rentVehicleConfirmationTextField" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <Button fx:id="rentVehicleInitialNextButton" mnemonicParsing="false" text="Next" />
+                              <Label fx:id="rentVehicleInitialErrorLabel" style="-fx-border-color: red;" text="Error" visible="false">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="rentVehicleSelectionPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label text="Rent Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                        <Accordion fx:id="rentVehicleSelectionAccordion">
+                          <panes>
+                              <TitledPane fx:id="rentvehicleSelectionTitledPane" animated="false" collapsible="false" layoutX="10.0" layoutY="10.0" text="1: Vehicle Type">
+                                 <content>
+                                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                       <children>
+                                          <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                             <children>
+                                                <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
+                                                   <children>
+                                                      <Label text="Type" />
+                                                      <ComboBox fx:id="rentVehicleSelectionTypeComboBox" prefWidth="150.0" promptText="Any" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="70.0" spacing="10.0">
+                                                   <children>
+                                                      <Label text="Location" />
+                                                      <TextField fx:id="rentVehicleSelectionLocationTextField" promptText="Required" />
+                                                   </children>
+                                                   <VBox.margin>
+                                                      <Insets />
+                                                   </VBox.margin>
+                                                </HBox>
+                                             </children>
+                                          </VBox>
+                                       </children>
+                                    </AnchorPane>
+                                 </content>
+                              </TitledPane>
+                          </panes>
+                        </Accordion>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <Button fx:id="rentVehicleNextButton" mnemonicParsing="false" text="Next" />
+                              <Label fx:id="rentVehicleErrorLabel" style="-fx-border-color: red;" text="Error" visible="false">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="returnVehicleStatusPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label text="Return Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="89.0" spacing="10.0">
+                           <children>
+                              <Label text="Rental ID" />
+                              <TextField fx:id="returnVehicleStatusRentalIDTextField" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <Label text="Rental End Date" />
+                              <DatePicker fx:id="returnVehicleRentalEndDatePicker" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <Label text="Rental End Time" />
+                              <HBox>
+                                 <children>
+                                    <TextField fx:id="returnVehicleEndHourTextField" prefWidth="50.0" />
+                                    <Label text=" : " />
+                                    <TextField fx:id="returnVehicleEndMinuteTextField" prefWidth="50.0" />
+                                 </children>
+                              </HBox>
+                              <ComboBox fx:id="returnVehiclePeriodComboBox" promptText="am" visibleRowCount="2" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="51.0" spacing="10.0">
+                           <children>
+                              <Label text="Odometer" />
+                              <TextField fx:id="returnVehicleOdometerTextField" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="159.0" spacing="10.0">
+                           <children>
+                              <Label text="Battery/Gas Tank is Full" />
+                              <CheckBox fx:id="returnVehicleFullGasCheckBOx" mnemonicParsing="false" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="195.0" spacing="10.0">
+                           <children>
+                              <Label text="Road Star Customer" />
+                              <CheckBox fx:id="returnVehicleRoadStarCheckBox" mnemonicParsing="false" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <Button fx:id="returnVehicleProcessButton" mnemonicParsing="false" text="Process Return" />
+                              <Label fx:id="returnVehicleStatusErrorLabel" style="-fx-border-color: red;" text="Error" visible="false">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="vehiclePaymentInformationPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label fx:id="vehiclePaymentInformationTitleLabel" text="Rent Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                        <TitledPane fx:id="vehiclePaymentInformationTitledPane" animated="false" collapsible="false" text="Payment Information">
+                           <content>
+                              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                 <children>
+                                    <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Credit Card Number" />
+                                                <TextField fx:id="vehiclePaymentInformationCreditCardNumberTextField" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="10.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Expiry" />
+                                                <ComboBox fx:id="vehiclePaymentInformationCreditCardExpiryMonthComboBox" prefWidth="150.0" />
+                                                <ComboBox fx:id="vehiclePaymentInformationCreditCardExpiryYearComboBox" layoutX="52.0" layoutY="10.0" prefWidth="150.0" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="40.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Type" />
+                                                <ComboBox fx:id="vehiclePaymentInformationCreditCardTypeComboBox" prefWidth="150.0" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </AnchorPane>
+                           </content>
+                        </TitledPane>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <Button fx:id="vehiclePaymentInformationConfirmButton" mnemonicParsing="false" text="Confirm" />
+                              <Label fx:id="vehiclePaymentInformationErrorLabel" style="-fx-border-color: red;" text="Error" visible="false">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="returnVehicleCostBreakdownPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label fx:id="returnVehicleCostBreakdownTitleLabel" text="Return Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                        </HBox>
+                        <TitledPane fx:id="returnVehicleCostBreakdownTitledPane" animated="false" collapsible="false" text="Cost Breakdown">
+                           <content>
+                              <AnchorPane minHeight="0.0" minWidth="0.0">
+                                 <children>
+                                    <VBox spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0">
+                                             <children>
+                                                <Label text="Total Estimated Cost:" />
+                                                <Label fx:id="returnVehicleTotalEstimatedCostLabel" layoutX="10.0" layoutY="10.0" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </AnchorPane>
+                           </content>
+                        </TitledPane>
+                        <HBox>
+                           <children>
+                              <Button fx:id="returnVehicleProcessPaymentButton" mnemonicParsing="false" text="Process Payment" />
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="confirmationPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label fx:id="confirmationPaneTitleLabel" text="Reserve Vehicles">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                        <TitledPane fx:id="confirmationTitledPane" animated="false" collapsible="false" text="Reservation Complete" VBox.vgrow="ALWAYS">
+                           <content>
+                              <AnchorPane minHeight="0.0" minWidth="0.0">
+                                 <children>
+                                    <VBox spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0">
+                                             <children>
+                                                <Label text="Confirmation Number:" />
+                                                <Label fx:id="confirmationNumberLabel" layoutX="10.0" layoutY="10.0" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0">
+                                             <children>
+                                                <Label text="Customer Name:" />
+                                                <Label fx:id="confirmationCustomerNameLabel" layoutX="10.0" layoutY="10.0" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" spacing="5.0">
+                                             <children>
+                                                <Label text="Vehicle type:" />
+                                                <Label fx:id="confirmationVehicleTypeLabel" layoutX="10.0" layoutY="10.0" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="32.0" spacing="5.0">
+                                             <children>
+                                                <Label text="Location:" />
+                                                <Label fx:id="confirmationLocationLabel" layoutX="10.0" layoutY="10.0" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="98.0" spacing="5.0">
+                                             <children>
+                                                <Label text="Estimated cost:" />
+                                                <Label fx:id="confirmationEstimatedCostLabel" layoutX="10.0" layoutY="10.0" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0" visible="false">
+                                             <children>
+                                                <Label text="Pickup at:" />
+                                                <Label fx:id="confirmationPickupLabel" layoutX="10.0" layoutY="10.0" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="32.0" spacing="5.0" visible="false">
+                                             <children>
+                                                <Label text="Return by:" />
+                                                <Label fx:id="confirmationReturnLabel" layoutX="10.0" layoutY="10.0" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </AnchorPane>
+                           </content>
+                        </TitledPane>
+                        <HBox alignment="CENTER_LEFT" spacing="5.0">
+                           <children>
+                              <Label fx:id="confirmationMessageLabel" text="Please have the confirmation number present at pickup." />
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="generateReportPane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label text="Generate Report">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                        <TitledPane fx:id="generateReportTitledPane" animated="false" text="Parameters" VBox.vgrow="ALWAYS">
+                           <content>
+                              <AnchorPane minHeight="0.0" minWidth="0.0">
+                                 <children>
+                                    <VBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Type" />
+                                                <ComboBox fx:id="generateReportTypeComboBox" prefWidth="150.0" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" spacing="5.0">
+                                             <children>
+                                                <Button fx:id="generateReportButton" mnemonicParsing="false" text="Generate" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </AnchorPane>
+                           </content>
+                        </TitledPane>
+                        <ScrollPane fx:id="generateReportScrollPane" prefHeight="200.0" prefWidth="200.0" visible="false">
+                           <content>
+                              <AnchorPane fx:id="generateReportResultAnchorPane1" minHeight="0.0" minWidth="0.0">
+                                 <children>
+                                    <Text fx:id="generateReportResultText1" strokeType="OUTSIDE" strokeWidth="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                 </children>
+                              </AnchorPane>
+                           </content>
+                        </ScrollPane>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+            <AnchorPane fx:id="viewEditDatabasePane" layoutX="10.0" layoutY="10.0" visible="false">
+               <children>
+                  <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                     <children>
+                        <HBox alignment="CENTER">
+                           <children>
+                              <Label text="View/Edit Database">
+                                 <font>
+                                    <Font size="18.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" />
+                           </padding>
+                        </HBox>
+                        <TitledPane fx:id="generateReportTitledPane" text="Edit" VBox.vgrow="ALWAYS">
+                           <content>
+                              <AnchorPane minHeight="0.0" minWidth="0.0">
+                                 <children>
+                                    <VBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
+                                             <children>
+                                                <Label text="Query" />
+                                                <TextArea prefHeight="200.0" prefWidth="200.0" wrapText="true" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" spacing="5.0">
+                                             <children>
+                                                <Button fx:id="generateReportGenerateButton" mnemonicParsing="false" text="Send Query" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </children>
+                              </AnchorPane>
+                           </content>
+                        </TitledPane>
+                        <TitledPane fx:id="viewEditDatabaseResultTitledPane" expanded="false" text="Result">
+                           <content>
+                              <ScrollPane fx:id="viewEditDatabaseResultScrollPane" prefHeight="200.0" prefWidth="200.0" visible="false">
+                                <content>
+                                  <AnchorPane fx:id="viewEditDatabaseResultAnchorPane" minHeight="0.0" minWidth="0.0">
+                                       <children>
+                                          <Text fx:id="viewEditDatabaseResultText" strokeType="OUTSIDE" strokeWidth="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                       </children>
+                                    </AnchorPane>
+                                </content>
+                              </ScrollPane>
+                           </content>
+                        </TitledPane>
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </VBox>
+               </children>
+            </AnchorPane>
+         </children>
+      </StackPane>
+   </center>
+</BorderPane>
