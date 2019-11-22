@@ -36,6 +36,11 @@ public class UIController {
     static String address;
     static String driversLicense;
     
+    static String creditCardNumber;
+    static String expiryMonth;
+    static String expiryYear;
+    static String creditCardType;
+    
     static String confirmationNumber;
     static String estimatedCost;
     
@@ -142,6 +147,8 @@ public class UIController {
     @FXML
     Label confirmationCustomerNameLabel;
     @FXML
+    Label confirmationDriversLicenseLabel;
+    @FXML
     Label confirmationVehicleTypeLabel;
     @FXML
     Label confirmationEstimatedCostLabel;
@@ -162,6 +169,10 @@ public class UIController {
     HBox rentVehicleConfirmationNumberBox;
     @FXML
     TextField rentVehicleConfirmationNumberTextField;
+    @FXML
+    HBox rentVehicleDriversLicenseBox;
+    @FXML
+    TextField rentVehicleDriversLicenseTextField;
     @FXML
     Button rentVehicleInitialNextButton;
     @FXML
@@ -222,6 +233,7 @@ public class UIController {
     @FXML
     public void reserveVehicle(ActionEvent actionEvent) {
         makeAllPanesInvisible();
+        vehicleTypeSelectionTitleLabel.setText("Reserve Vehicles");
         vehicleTypeSelectionPane.setVisible(true);
         if (vehicleTypeSelectionComboBox.getItems().isEmpty()) {
             vehicleTypeSelectionComboBox.getItems().add("Any");
@@ -246,17 +258,20 @@ public class UIController {
         
         vehicleTypeSelectionErrorLabel.setVisible(false);
         makeAllPanesInvisible();
-        if (isReservation) {
-            durationTitleLabel.setText("Reserve Vehicles");
-        } else if (isRental) {
-            durationTitleLabel.setText("Rent Vehicles");
-        }
+        
         durationStartPeriodComboBox.getItems().add("am");
         durationStartPeriodComboBox.getSelectionModel().selectFirst();
         durationStartPeriodComboBox.getItems().add("pm");
         durationEndPeriodComboBox.getItems().add("am");
         durationEndPeriodComboBox.getSelectionModel().selectFirst();
         durationEndPeriodComboBox.getItems().add("pm");
+        if (isReservation) {
+            durationTitleLabel.setText("Reserve Vehicles");
+            durationTitledPane.setText("Reserve Vehicles");
+        } else if (isRental) {
+            durationTitleLabel.setText("Rent Vehicles");
+            durationTitledPane.setText("Rent Vehicles");
+        }
         durationPane.setVisible(true);
     }
     
@@ -410,6 +425,7 @@ public class UIController {
             // TODO generate confirmation number
             confirmationNumberLabel.setText("TODO");
             confirmationCustomerNameLabel.setText(name);
+            confirmationDriversLicenseLabel.setText(driversLicense);
             confirmationVehicleTypeLabel.setText(vehicleTypeName);
             confirmationLocationLabel.setText(location);
             // TODO calculate estimated cost
@@ -428,6 +444,7 @@ public class UIController {
             // TODO generate confirmation number
             confirmationNumberLabel.setText("TODO");
             confirmationCustomerNameLabel.setText(name);
+            confirmationDriversLicenseLabel.setText(driversLicense);
             confirmationVehicleTypeLabel.setText(vehicleTypeName);
             confirmationLocationLabel.setText(location);
             // TODO calculate estimated cost
@@ -437,7 +454,7 @@ public class UIController {
             
             confirmationPaneTitleLabel.setText("Rent Vehicles");
             confirmationTitledPane.setText("Rental Complete");
-            confirmationPane.setVisible(true);
+            paymentInformationPane.setVisible(true);
         } else {
             customerInformationErrorLabel.setText("Something went wrong - please start over.");
             customerInformationErrorLabel.setVisible(true);
@@ -445,11 +462,22 @@ public class UIController {
     }
     
     @FXML
+    public void processPayment(ActionEvent actionEvent) {
+        
+    }
+    
+    @FXML
     public void rentVehicle(ActionEvent actionEvent) {
         makeAllPanesInvisible();
         rentVehicleInitialPane.setVisible(true);
-        rentVehicleNewCustomerRadioButton.setOnAction(event -> rentVehicleConfirmationNumberBox.setVisible(false));
-        rentVehicleExistingReservationRadioButton.setOnAction(event -> rentVehicleConfirmationNumberBox.setVisible(true));
+        rentVehicleNewCustomerRadioButton.setOnAction(event -> {
+            rentVehicleDriversLicenseBox.setVisible(false);
+            rentVehicleConfirmationNumberBox.setVisible(false);
+        });
+        rentVehicleExistingReservationRadioButton.setOnAction(event -> {
+            rentVehicleDriversLicenseBox.setVisible(true);
+            rentVehicleConfirmationNumberBox.setVisible(true);
+        });
         setRental(true);
     }
     
@@ -459,6 +487,12 @@ public class UIController {
             if (rentVehicleConfirmationNumberTextField.getText().isBlank()) {
                 rentVehicleInitialErrorLabel.setVisible(true);
                 rentVehicleInitialErrorLabel.setText("Invalid Reservation or Phone Number");
+                return;
+            }
+            
+            if (rentVehicleDriversLicenseTextField.getText().isBlank()) {
+                rentVehicleInitialErrorLabel.setVisible(true);
+                rentVehicleInitialErrorLabel.setText("Invalid Driver's License");
                 return;
             }
             
@@ -478,6 +512,8 @@ public class UIController {
             }
             vehicleTypeSelectionPane.setVisible(true);
         } else {
+            driversLicense = rentVehicleDriversLicenseTextField.getText();
+            
             // TODO generate rental confirmation number and add to confirmation screen
             paymentInformationPane.setVisible(true);
         }

@@ -482,11 +482,12 @@
                            <children>
                               <Group fx:id="rentVehicleInitialChoiceGroup">
                                  <children>
-                                    <RadioButton fx:id="rentVehicleNewCustomerRadioButton" layoutY="23.0" mnemonicParsing="false" text="New Customer">
+                                    <RadioButton fx:id="rentVehicleExistingReservationRadioButton" mnemonicParsing="false" selected="true" text="Existing Reservation">
                                        <toggleGroup>
                                           <ToggleGroup fx:id="rentalInitialization" />
-                                       </toggleGroup></RadioButton>
-                                    <RadioButton fx:id="rentVehicleExistingReservationRadioButton" mnemonicParsing="false" selected="true" text="Existing Reservation" toggleGroup="$rentalInitialization" />
+                                       </toggleGroup>
+                                    </RadioButton>
+                                    <RadioButton fx:id="rentVehicleNewCustomerRadioButton" layoutY="23.0" mnemonicParsing="false" text="New Customer" toggleGroup="$rentalInitialization" />
                                  </children>
                               </Group>
                            </children>
@@ -499,6 +500,16 @@
                                  </padding>
                               </Label>
                               <TextField fx:id="rentVehicleConfirmationNumberTextField" />
+                           </children>
+                        </HBox>
+                        <HBox fx:id="rentVehicleDriversLicenseBox" alignment="CENTER_LEFT" layoutX="20.0" layoutY="113.0" spacing="10.0">
+                           <children>
+                              <Label text="Driver's License">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                              <TextField fx:id="rentVehicleDriversLicenseTextField" />
                            </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
@@ -736,6 +747,12 @@
                                              <children>
                                                 <Label text="Customer Name:" />
                                                 <Label fx:id="confirmationCustomerNameLabel" layoutX="10.0" layoutY="10.0" />
+                                             </children>
+                                          </HBox>
+                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="31.0" spacing="5.0">
+                                             <children>
+                                                <Label text="Driver's License:" />
+                                                <Label fx:id="confirmationDriversLicenseLabel" layoutX="10.0" layoutY="10.0" />
                                              </children>
                                           </HBox>
                                           <HBox alignment="CENTER_LEFT" spacing="5.0">
