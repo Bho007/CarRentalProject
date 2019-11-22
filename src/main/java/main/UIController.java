@@ -2,18 +2,17 @@ package main;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Group;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import model.VehicleTypeName;
 
-import javax.swing.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.util.Arrays;
-
-import static main.Main.database;
 
 public class UIController {
     static boolean isReservation;
@@ -72,20 +71,24 @@ public class UIController {
     AnchorPane filterResultsPane;
     
     @FXML
-    AnchorPane reserveVehicleTypeSelectionPane;
+    AnchorPane vehicleTypeSelectionPane;
     @FXML
-    ComboBox<String> reserveVehicleSelectionTypeComboBox;
+    Label vehicleTypeSelectionTitleLabel;
     @FXML
-    TextField reserveVehicleSelectionLocationTextField;
+    ComboBox<String> vehicleTypeSelectionComboBox;
     @FXML
-    Button reserveVehicleSelectionNextButton;
+    TextField vehicleTypeSelectionLocationTextField;
     @FXML
-    Label reserveVehicleSelectionErrorLabel;
+    Button vehicleTypeSelectionNextButton;
+    @FXML
+    Label vehicleTypeSelectionErrorLabel;
     
     @FXML
     AnchorPane durationPane;
     @FXML
     TitledPane durationTitledPane;
+    @FXML
+    Label durationTitleLabel;
     @FXML
     DatePicker durationStartDatePicker;
     @FXML
@@ -112,6 +115,8 @@ public class UIController {
     @FXML
     TitledPane customerInformationTitledPane;
     @FXML
+    Label customerInformationTitleLabel;
+    @FXML
     TextField customerInformationPhoneTextField;
     @FXML
     TextField customerInformationNameTextField;
@@ -129,6 +134,8 @@ public class UIController {
     @FXML
     Label confirmationPaneTitleLabel;
     @FXML
+    TitledPane confirmationTitledPane;
+    @FXML
     Label confirmationNumberLabel;
     @FXML
     Label confirmationLocationLabel;
@@ -145,15 +152,26 @@ public class UIController {
     
     @FXML
     AnchorPane rentVehicleInitialPane;
-    
     @FXML
-    AnchorPane rentVehicleSelectionPane;
+    Group rentVehicleInitialChoiceGroup;
+    @FXML
+    RadioButton rentVehicleNewCustomerRadioButton;
+    @FXML
+    RadioButton rentVehicleExistingReservationRadioButton;
+    @FXML
+    HBox rentVehicleConfirmationNumberBox;
+    @FXML
+    TextField rentVehicleConfirmationNumberTextField;
+    @FXML
+    Button rentVehicleInitialNextButton;
+    @FXML
+    Label rentVehicleInitialErrorLabel;
     
     @FXML
     AnchorPane returnVehicleStatusPane;
     
     @FXML
-    AnchorPane vehiclePaymentInformationPane;
+    AnchorPane paymentInformationPane;
     
     @FXML
     AnchorPane returnVehicleCostBreakdownPane;
@@ -204,36 +222,42 @@ public class UIController {
     @FXML
     public void reserveVehicle(ActionEvent actionEvent) {
         makeAllPanesInvisible();
-        reserveVehicleTypeSelectionPane.setVisible(true);
-        if (reserveVehicleSelectionTypeComboBox.getItems().isEmpty()) {
-            reserveVehicleSelectionTypeComboBox.getItems().add("Any");
-            reserveVehicleSelectionTypeComboBox.getSelectionModel().selectFirst();
+        vehicleTypeSelectionPane.setVisible(true);
+        if (vehicleTypeSelectionComboBox.getItems().isEmpty()) {
+            vehicleTypeSelectionComboBox.getItems().add("Any");
+            vehicleTypeSelectionComboBox.getSelectionModel().selectFirst();
             Arrays.stream(VehicleTypeName.values())
                     .map(VehicleTypeName::getName)
-                    .forEach(e -> reserveVehicleSelectionTypeComboBox.getItems().add(e));
+                    .forEach(e -> vehicleTypeSelectionComboBox.getItems().add(e));
         }
+        setReservation(true);
     }
     
     @FXML
-    public void processReservationVehicleType(ActionEvent actionEvent) {
-        if (reserveVehicleSelectionLocationTextField.getText().isBlank()) {
-            reserveVehicleSelectionErrorLabel.setVisible(true);
-            reserveVehicleSelectionErrorLabel.setText("Invalid Location");
+    public void processVehicleType(ActionEvent actionEvent) {
+        if (vehicleTypeSelectionLocationTextField.getText().isBlank()) {
+            vehicleTypeSelectionErrorLabel.setVisible(true);
+            vehicleTypeSelectionErrorLabel.setText("Invalid Location");
             return;
         }
-        vehicleTypeName = reserveVehicleSelectionTypeComboBox.getValue();
-        location = reserveVehicleSelectionLocationTextField.getText();
-        reserveVehicleSelectionErrorLabel.setVisible(false);
-        setReservation(true);
         
+        vehicleTypeName = vehicleTypeSelectionComboBox.getValue();
+        location = vehicleTypeSelectionLocationTextField.getText();
+        
+        vehicleTypeSelectionErrorLabel.setVisible(false);
         makeAllPanesInvisible();
-        durationPane.setVisible(true);
+        if (isReservation) {
+            durationTitleLabel.setText("Reserve Vehicles");
+        } else if (isRental) {
+            durationTitleLabel.setText("Rent Vehicles");
+        }
         durationStartPeriodComboBox.getItems().add("am");
         durationStartPeriodComboBox.getSelectionModel().selectFirst();
         durationStartPeriodComboBox.getItems().add("pm");
         durationEndPeriodComboBox.getItems().add("am");
         durationEndPeriodComboBox.getSelectionModel().selectFirst();
         durationEndPeriodComboBox.getItems().add("pm");
+        durationPane.setVisible(true);
     }
     
     @FXML
@@ -316,7 +340,6 @@ public class UIController {
             }
         }
         
-        durationErrorLabel.setVisible(false);
         startDate = durationStartDatePicker.getValue().toString();
         startTimeHour = durationStartHourTextField.getText();
         startTimeMinute = durationStartMinuteTextField.getText();
@@ -328,8 +351,19 @@ public class UIController {
         
         // TODO check if there is a valid vehicle in selected time frame
         
-        makeAllPanesInvisible();
-        customerInformationPane.setVisible(true);
+        durationErrorLabel.setVisible(false);
+        if (isReservation) {
+            customerInformationTitleLabel.setText("Reserve Vehicles");
+            makeAllPanesInvisible();
+            customerInformationPane.setVisible(true);
+        } else if (isRental) {
+            customerInformationTitleLabel.setText("Rent Vehicles");
+            makeAllPanesInvisible();
+            customerInformationPane.setVisible(true);
+        } else {
+            customerInformationErrorLabel.setVisible(true);
+            customerInformationErrorLabel.setText("Something went wrong - please start over");
+        }
     }
     
     @FXML
@@ -372,8 +406,6 @@ public class UIController {
         if (isReservation) {
             customerInformationErrorLabel.setVisible(false);
             makeAllPanesInvisible();
-            confirmationPane.setVisible(true);
-            confirmationPaneTitleLabel.setText("Reserve Vehicles");
             
             // TODO generate confirmation number
             confirmationNumberLabel.setText("TODO");
@@ -382,16 +414,30 @@ public class UIController {
             confirmationLocationLabel.setText(location);
             // TODO calculate estimated cost
             confirmationEstimatedCostLabel.setText("TODO");
-            
             // confirmationPickupLabel.setText("");
             // confirmationReturnLabel.setText("");
+            
+            confirmationPaneTitleLabel.setText("Reserve Vehicles");
+            confirmationTitledPane.setText("Reservation Complete");
+            confirmationPane.setVisible(true);
         } else if (isRental) {
             customerInformationErrorLabel.setVisible(false);
             makeAllPanesInvisible();
             
             // TODO get payment information
             // TODO generate confirmation number
+            confirmationNumberLabel.setText("TODO");
+            confirmationCustomerNameLabel.setText(name);
+            confirmationVehicleTypeLabel.setText(vehicleTypeName);
+            confirmationLocationLabel.setText(location);
+            // TODO calculate estimated cost
+            confirmationEstimatedCostLabel.setText("TODO");
+            // confirmationPickupLabel.setText("");
+            // confirmationReturnLabel.setText("");
             
+            confirmationPaneTitleLabel.setText("Rent Vehicles");
+            confirmationTitledPane.setText("Rental Complete");
+            confirmationPane.setVisible(true);
         } else {
             customerInformationErrorLabel.setText("Something went wrong - please start over.");
             customerInformationErrorLabel.setVisible(true);
@@ -402,6 +448,39 @@ public class UIController {
     public void rentVehicle(ActionEvent actionEvent) {
         makeAllPanesInvisible();
         rentVehicleInitialPane.setVisible(true);
+        rentVehicleNewCustomerRadioButton.setOnAction(event -> rentVehicleConfirmationNumberBox.setVisible(false));
+        rentVehicleExistingReservationRadioButton.setOnAction(event -> rentVehicleConfirmationNumberBox.setVisible(true));
+        setRental(true);
+    }
+    
+    @FXML
+    public void processRental(ActionEvent actionEvent) {
+        if (rentVehicleExistingReservationRadioButton.isSelected()) {
+            if (rentVehicleConfirmationNumberTextField.getText().isBlank()) {
+                rentVehicleInitialErrorLabel.setVisible(true);
+                rentVehicleInitialErrorLabel.setText("Invalid Reservation or Phone Number");
+                return;
+            }
+            
+            // TODO check if reservation or phone number is valid
+        }
+        
+        rentVehicleInitialErrorLabel.setVisible(false);
+        makeAllPanesInvisible();
+        if (rentVehicleNewCustomerRadioButton.isSelected()) {
+            vehicleTypeSelectionTitleLabel.setText("Rent Vehicles");
+            if (vehicleTypeSelectionComboBox.getItems().isEmpty()) {
+                vehicleTypeSelectionComboBox.getItems().add("Any");
+                vehicleTypeSelectionComboBox.getSelectionModel().selectFirst();
+                Arrays.stream(VehicleTypeName.values())
+                        .map(VehicleTypeName::getName)
+                        .forEach(e -> vehicleTypeSelectionComboBox.getItems().add(e));
+            }
+            vehicleTypeSelectionPane.setVisible(true);
+        } else {
+            // TODO generate rental confirmation number and add to confirmation screen
+            paymentInformationPane.setVisible(true);
+        }
     }
     
     @FXML
@@ -427,14 +506,13 @@ public class UIController {
         splashPane.setVisible(false);
         viewVehiclesPane.setVisible(false);
         filterResultsPane.setVisible(false);
-        reserveVehicleTypeSelectionPane.setVisible(false);
+        vehicleTypeSelectionPane.setVisible(false);
         confirmationPane.setVisible(false);
         durationPane.setVisible(false);
         customerInformationPane.setVisible(false);
         rentVehicleInitialPane.setVisible(false);
-        rentVehicleSelectionPane.setVisible(false);
         returnVehicleStatusPane.setVisible(false);
-        vehiclePaymentInformationPane.setVisible(false);
+        paymentInformationPane.setVisible(false);
         returnVehicleCostBreakdownPane.setVisible(false);
         generateReportPane.setVisible(false);
         viewEditDatabasePane.setVisible(false);
