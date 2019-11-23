@@ -15,12 +15,14 @@ import model.VehicleTypeName;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDate;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class UIController {
@@ -39,6 +41,8 @@ public class UIController {
     static String endTimeHour;
     static String endTimeMinute;
     static String endTimePeriod;
+    static LocalDateTime fromDateTime;
+    static LocalDateTime endDateTime;
     
     static String phone;
     static String name;
@@ -323,7 +327,7 @@ public class UIController {
             filterSearchErrorLabel.setVisible(true);
             filterSearchErrorLabel.setText("Error: \"From\" Date after \"To\" Date");
         } else {
-            DatabaseResponse<List<Vehicle>> response = Main.database.getVehicles(filterTypeComboBox.getValue().equals("Any") ? null : VehicleTypeName.valueOf(filterTypeComboBox.getValue()),
+            DatabaseResponse<List<Vehicle>> response = Main.database.getVehicles(filterTypeComboBox.getValue().equals("Any") ? null : VehicleTypeName.valueOf(filterTypeComboBox.getValue().toUpperCase()),
                     filterLocationTextField.getText(),
                     filterFromDatePicker.getValue() == null ? null : filterFromDatePicker.getValue().atStartOfDay(),
                     filterToDatePicker.getValue() == null ? null : filterToDatePicker.getValue().atStartOfDay());
@@ -346,7 +350,7 @@ public class UIController {
                     });
                     sortResultsByYear.setOnAction(event -> {
                         filterVehiclesItemsBox.getChildren().clear();
-                        response.getValue().sort(Comparator.comparing(Vehicle::getYear));
+                        response.getValue().sort(Comparator.comparing(Vehicle::getYear).reversed());
                         response.getValue().forEach(v -> filterVehiclesItemsBox.getChildren()
                                 .add(new Label("vid " + v.getVid() + ": " +
                                         v.getYear() + " " + v.getMake() + " " + v.getModel() + ", " +
@@ -451,6 +455,8 @@ public class UIController {
     
     @FXML
     public void processDuration(ActionEvent actionEvent) {
+        durationErrorLabel.setVisible(false);
+        
         if (durationStartDatePicker.getValue() == null) {
             durationErrorLabel.setText("Invalid Start Date");
             durationErrorLabel.setVisible(true);
@@ -538,7 +544,36 @@ public class UIController {
         endTimeMinute = durationEndMinuteTextField.getText();
         endTimePeriod = durationEndPeriodComboBox.getValue();
         
-        // TODO check if there is a valid vehicle in selected time frame
+        // Check if there is valid vehicle in time frame
+        int fromHour = Integer.parseInt(startTimeHour) % 12;
+        fromHour = fromHour + (startTimePeriod.equals("am") ? 0 : 12);
+        fromHour = fromHour % 24;
+        int fromMinute = Integer.parseInt(startTimeMinute);
+        
+        int endHour = Integer.parseInt(endTimeHour) % 12;
+        endHour = endHour + (startTimePeriod.equals("am") ? 0 : 12);
+        endHour = endHour % 24;
+        int endMinute = Integer.parseInt(endTimeMinute);
+        
+        fromDateTime = durationStartDatePicker.getValue().atTime(fromHour, fromMinute);
+        endDateTime = durationEndDatePicker.getValue().atTime(endHour, endMinute);
+        
+        VehicleTypeName type = vehicleTypeName.equalsIgnoreCase("any") ? null : VehicleTypeName.valueOf(vehicleTypeName.toUpperCase());
+        
+        DatabaseResponse<List<Vehicle>> available = Main.database.getVehicles(type, location, fromDateTime, endDateTime);
+        logResponse(available);
+        
+        if (!available.isSuccess()) {
+            durationErrorLabel.setText("Something went wrong when getting all available vehicles - please start over.");
+            durationErrorLabel.setVisible(true);
+            return;
+        }
+        
+        if (available.getValue().isEmpty()) {
+            durationErrorLabel.setText("No available vehicles in selected timeframe.");
+            durationErrorLabel.setVisible(true);
+            return;
+        }
         
         durationErrorLabel.setVisible(false);
         if (isReservation) {
@@ -594,40 +629,148 @@ public class UIController {
         address = customerInformationAddressTextField.getText();
         driversLicense = customerInformationDriversLicenseTextField.getText();
         
-        if (isReservation) {
-            customerInformationErrorLabel.setVisible(false);
-            makeAllPanesInvisible();
+        // check if customer is in database (by driver's license)
+        DatabaseResponse<Boolean> existingCustomer = Main.database.customerExists(driversLicense);
+        logResponse(existingCustomer);
+        if (!existingCustomer.isSuccess()) {
+            customerInformationErrorLabel.setText("Something went wrong when getting customer details - please start over.");
+            customerInformationErrorLabel.setVisible(true);
+            return;
+        }
+        
+        // customer is not in database
+        if (!existingCustomer.getValue()) {
+            DatabaseResponse<?> addCustomer = Main.database.addCustomer(phone, name, address, driversLicense);
+            logResponse(addCustomer);
+            if (!addCustomer.isSuccess()) {
+                customerInformationErrorLabel.setText("Unable to add customer to database - please start over.");
+                customerInformationErrorLabel.setVisible(true);
+                return;
+            }
+        }
+        
+        long weeks = fromDateTime.until(endDateTime, ChronoUnit.DAYS) / 7;
+        long days = fromDateTime.until(endDateTime, ChronoUnit.DAYS) % 7;
+        long hours = fromDateTime.until(endDateTime, ChronoUnit.HOURS) - weeks * 7 * 24 - days * 24 + 1;
+        
+        // get rates from database
+        if (!vehicleTypeName.equalsIgnoreCase("Any")) {
+            DatabaseResponse<Integer> hourlyRateResponse = Main.database.getHourlyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));
+            logResponse(hourlyRateResponse);
+            DatabaseResponse<Integer> dailyRateResponse = Main.database.getDailyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));
+            logResponse(dailyRateResponse);
+            DatabaseResponse<Integer> weeklyRateResponse = Main.database.getWeeklyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));
+            logResponse(weeklyRateResponse);
             
-            // TODO generate confirmation number
-            confirmationNumberLabel.setText("TODO");
+            if (!hourlyRateResponse.isSuccess() || !dailyRateResponse.isSuccess() || !weeklyRateResponse.isSuccess()) {
+                customerInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
+                customerInformationErrorLabel.setVisible(true);
+                return;
+            }
+            
+            int hourlyRate = hourlyRateResponse.getValue();
+            int dailyRate = dailyRateResponse.getValue();
+            int weeklyRate = weeklyRateResponse.getValue();
+            
+            String costBreakdown = "$" + (weeklyRate * weeks + dailyRate * dailyRate + hourlyRate * hours) + "\n" +
+                    "(" +
+                    weeks + " weeks * " + "$ " + weeklyRate + "/week + " +
+                    days + " days * " + "$ " + dailyRate + "/day" +
+                    hours + " hours * " + "$ " + hourlyRate + "/hour" +
+                    ")";
+            confirmationEstimatedCostLabel.setText(costBreakdown);
+        } else {
+            Map<VehicleTypeName, List<DatabaseResponse<Integer>>> rates =
+                    Arrays.stream(VehicleTypeName.values()).collect(
+                            Collectors.toMap(t -> t, t -> List.of(
+                                    CompletableFuture.supplyAsync(() -> Main.database.getHourlyRate(t)).join(),
+                                    CompletableFuture.supplyAsync(() -> Main.database.getDailyRate(t)).join(),
+                                    CompletableFuture.supplyAsync(() -> Main.database.getWeeklyRate(t)).join()
+                                    ),
+                                    (a, b) -> b));
+            
+            rates.values().stream().flatMap(Collection::stream).forEach(this::logResponse);
+            
+            if (rates.values().stream().flatMap(Collection::stream).anyMatch(r -> !r.isSuccess())) {
+                customerInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
+                customerInformationErrorLabel.setVisible(true);
+                return;
+            }
+            
+            
+            Map<VehicleTypeName, Integer> computedCosts = rates.keySet().stream().collect(
+                    Collectors.toMap(t -> t, t ->
+                            rates.get(t).get(0).getValue() * (int) hours +
+                                    rates.get(t).get(1).getValue() * (int) days +
+                                    rates.get(t).get(2).getValue() * (int) weeks)
+            );
+            
+            int minComputedCost = computedCosts.values().stream().reduce((a, b) -> a < b ? a : b).get();
+            int maxComputedCost = computedCosts.values().stream().reduce((a, b) -> a > b ? a : b).get();
+            
+            VehicleTypeName minCostVehicleType = computedCosts.keySet()
+                    .stream()
+                    .filter(k -> computedCosts.get(k) == minComputedCost).limit(1).findFirst().get();
+            VehicleTypeName maxCostVehicleType = computedCosts.keySet()
+                    .stream()
+                    .filter(k -> computedCosts.get(k) == minComputedCost).limit(1).findFirst().get();
+            
+            String costBreakdown = "$" + minComputedCost + " - " + "$" + maxComputedCost + "\n\n" +
+                    "Minimum cost " + "(" + minCostVehicleType.getName() + "):\n" +
+                    weeks + " weeks * " + "$" + rates.get(minCostVehicleType).get(2).getValue() + "/week\n" +
+                    days + " days * " + "$" + rates.get(minCostVehicleType).get(1).getValue() + "/day\n" +
+                    hours + " hours * " + "$" + rates.get(minCostVehicleType).get(0).getValue() + "/hour" + "\n\n" +
+                    "Maximum cost " + "(" + maxCostVehicleType.getName() + "):\n" +
+                    weeks + " weeks * " + "$" + rates.get(minCostVehicleType).get(2).getValue() + "/week\n" +
+                    days + " days * " + "$" + rates.get(minCostVehicleType).get(1).getValue() + "/day\n" +
+                    hours + " hours * " + "$" + rates.get(minCostVehicleType).get(0).getValue() + "/hour" + "\n";
+            confirmationEstimatedCostLabel.setText(costBreakdown);
+        }
+        
+        if (isReservation) {
+            DatabaseResponse<String> confirmationNumber = Main.database.reserveVehicle(
+                    vehicleTypeName.equalsIgnoreCase("any") ?
+                            null :
+                            VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()),
+                    location,
+                    fromDateTime,
+                    endDateTime);
+            logResponse(confirmationNumber);
+            
+            if (!confirmationNumber.isSuccess()) {
+                customerInformationErrorLabel.setText(confirmationNumber.getResponse());
+                customerInformationErrorLabel.setVisible(true);
+                return;
+            }
+            
+            confirmationNumberLabel.setText(confirmationNumber.getValue());
             confirmationCustomerNameLabel.setText(name);
             confirmationDriversLicenseLabel.setText(driversLicense);
             confirmationVehicleTypeLabel.setText(vehicleTypeName);
             confirmationLocationLabel.setText(location);
-            // TODO calculate estimated cost
-            confirmationEstimatedCostLabel.setText("TODO");
             // confirmationPickupLabel.setText("");
             // confirmationReturnLabel.setText("");
             
+            customerInformationErrorLabel.setVisible(false);
+            makeAllPanesInvisible();
             confirmationPaneTitleLabel.setText("Reserve Vehicles");
             confirmationTitledPane.setText("Reservation Complete");
             confirmationPane.setVisible(true);
         } else if (isRental) {
-            customerInformationErrorLabel.setVisible(false);
-            makeAllPanesInvisible();
-            
             // TODO get payment information
             // TODO generate confirmation number
+            // TODO move to payment
             confirmationNumberLabel.setText("TODO");
             confirmationCustomerNameLabel.setText(name);
             confirmationDriversLicenseLabel.setText(driversLicense);
             confirmationVehicleTypeLabel.setText(vehicleTypeName);
             confirmationLocationLabel.setText(location);
-            // TODO calculate estimated cost
-            confirmationEstimatedCostLabel.setText("TODO");
             // confirmationPickupLabel.setText("");
             // confirmationReturnLabel.setText("");
             
+            
+            customerInformationErrorLabel.setVisible(false);
+            makeAllPanesInvisible();
             confirmationPaneTitleLabel.setText("Rent Vehicles");
             confirmationTitledPane.setText("Rental Complete");
             paymentInformationPane.setVisible(true);
@@ -972,6 +1115,10 @@ public class UIController {
         isReservation = false;
         isRental = false;
         isReturn = value;
+    }
+    
+    private LocalDateTime convertSqlDateToLocalDateTime(java.sql.Date date, java.sql.Time time) {
+        return date.toLocalDate().atTime(time.toLocalTime());
     }
     
     private void logResponse(DatabaseResponse<?> response) {
