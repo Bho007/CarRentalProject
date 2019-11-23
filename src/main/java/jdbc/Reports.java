@@ -86,14 +86,54 @@ public class Reports {
                 int confNo = rs.getInt("confno");
 
                 if (!rs.wasNull()) {
-                    String confQuery = "SELECT * FROM "
+                    String confQuery = "SELECT * FROM reservation r WHERE confno = ?";
+                    PreparedStatement confStatement = conn.prepareStatement(confQuery);
+
+                    confStatement.setInt(1, confNo);
+
+                    ResultSet reservationRs = confStatement.executeQuery();
+
+                    if (reservationRs.next()) {
+                        reservationRs.first();
+
+                        String vtName = reservationRs.getString("vtname");
+                        VehicleTypeName vt = VehicleTypeName.valueOf(vtName);
+                        Date fromDate = reservationRs.getDate("fromdate");
+                        Time fromTime = reservationRs.getTime("fromtime");
+
+                        Date toDate = reservationRs.getDate("todate");
+                        Time toTime = reservationRs.getTime("totime");
+
+                        Reservation reservation = new Reservation(confNo, vt, c, fromDate, fromTime, toDate, toTime);
+
+                        String eTypeQuery = "SELECT * FROM EType WHERE etname IN (SELECT eid FROM reserve_includes" +
+                                " WHERE rid = ?";
+
+                        PreparedStatement eTypeStatement = conn.prepareStatement(eTypeQuery);
+
+                        eTypeStatement.setInt(1, confNo);
+
+                        ResultSet eTypeRs = eTypeStatement.executeQuery();
+
+                        while (eTypeRs.next()) {
+                            String etname = eTypeRs.getString("etname");
+                            int drate = eTypeRs.getInt("drate");
+                            int hrate = eTypeRs.getInt("hrate");
+
+                            EquipType et = new EquipType(etname, drate, hrate);
+
+                            reservation.addETypeReserved(et);
+                        }
+
+                        r.addReservation(reservation);
+                    }
                 }
 
                 String equipmentQuery = "SELECT * FROM rent_includes r INNER JOIN equipment e ON r.eid = e.eid " +
                         "INNER JOIN equiptype t ON t.etname = e.etname " +
                         "WHERE r.rid = ?";
 
-                PreparedStatement eqStmt = conn.prepareCall(equipmentQuery);
+                PreparedStatement eqStmt = conn.prepareStatement(equipmentQuery);
                 eqStmt.setInt(1, rid);
                 ResultSet eqRs = eqStmt.executeQuery();
 
