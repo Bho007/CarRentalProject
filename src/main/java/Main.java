@@ -4,7 +4,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import jdbc.Query;
-import model.TimePeriod;
+//import model.TimePeriod;
 import model.Vehicle;
 import model.VehicleStatus;
 import model.VehicleType;
@@ -27,18 +27,20 @@ public class Main extends Application {
             Class.forName("org.postgresql.Driver");
             System.out.println("Connecting to database...");
             conn = DriverManager.getConnection(DB_URL, USER, PASS);
-            stmt = conn.createStatement();
+            conn.setAutoCommit(false);
+//            stmt = conn.prepareStatement("");
+//            stmt.
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        System.out.println(getAllAvailableVehicles(null, "", null));
+        //System.out.println(getAllAvailableVehicles(null, "", null, null));
 
 
         // Free up connection resources
         if (conn != null) {
             try {
-                stmt.close();
+                //stmt.close();
                 conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -57,7 +59,7 @@ public class Main extends Application {
     }
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(Stage stage) {
         String javaVersion = System.getProperty("java.version");
         String javafxVersion = System.getProperty("javafx.version");
         Label l = new Label("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
