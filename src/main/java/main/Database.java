@@ -17,6 +17,7 @@ public interface Database {
     
     DatabaseResponse<Boolean> locationExists(String location);
     DatabaseResponse<Boolean> customerExists(String driversLicense);
+    DatabaseResponse<Customer> getCustomer(String driversLicense);
     
     // return anything (default to empty string?) - if customer cannot be added, set success == false
     // return error message with what went wrong in the case of failure
@@ -26,7 +27,8 @@ public interface Database {
     // return error message with what went wrong in the case of failure
     DatabaseResponse<String> reserveVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to);
     
-    DatabaseResponse<Reservation> getReservation(String confirmationNumber);
+    DatabaseResponse<Reservation> getReservationByConfirmationNumber(String confirmationNumber);
+    DatabaseResponse<Reservation> getReservationByPhoneNumber(String phoneNumber);
     
     // return confirmation number, if type == null, rent any type of vehicle
     // return error message with what went wrong in the case of failure
