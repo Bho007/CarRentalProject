@@ -328,7 +328,6 @@ public class UIController {
                     filterFromDatePicker.getValue() == null ? null : filterFromDatePicker.getValue().atStartOfDay(),
                     filterToDatePicker.getValue() == null ? null : filterToDatePicker.getValue().atStartOfDay());
             
-            Main.previousResponse = response;
             logResponse(response);
             
             if (response.isSuccess()) {
@@ -405,9 +404,26 @@ public class UIController {
     
     @FXML
     public void processVehicleType(ActionEvent actionEvent) {
+        vehicleTypeSelectionErrorLabel.setVisible(false);
+        
         if (vehicleTypeSelectionLocationTextField.getText().isBlank()) {
             vehicleTypeSelectionErrorLabel.setVisible(true);
-            vehicleTypeSelectionErrorLabel.setText("Invalid Location");
+            vehicleTypeSelectionErrorLabel.setText("Missing Location");
+            return;
+        }
+        
+        DatabaseResponse<Boolean> locationExists = Main.database.locationExists(vehicleTypeSelectionLocationTextField.getText());
+        logResponse(locationExists);
+        
+        if (!locationExists.isSuccess()) {
+            vehicleTypeSelectionErrorLabel.setVisible(true);
+            vehicleTypeSelectionErrorLabel.setText(locationExists.getResponse());
+            return;
+        }
+        
+        if (!locationExists.getValue()) {
+            vehicleTypeSelectionErrorLabel.setVisible(true);
+            vehicleTypeSelectionErrorLabel.setText("Location does not exist");
             return;
         }
         
@@ -964,6 +980,8 @@ public class UIController {
                 "RESPONSE: " + response.getResponse() + "\n\n";
         
         System.out.println(formatted);
+        
+        Main.previousResponse = response;
         
         try {
             Files.writeString(Main.logFile, formatted, StandardOpenOption.APPEND);

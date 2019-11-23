@@ -181,6 +181,16 @@ public class TestDatabase implements Database {
     }
     
     @Override
+    public DatabaseResponse<Boolean> locationExists(String location) {
+        return new TestDatabaseResponse<Boolean>("query location", true, "found location", true);
+    }
+    
+    @Override
+    public DatabaseResponse<String> reserveVehicle(VehicleTypeName type, String location) {
+        return null;
+    }
+    
+    @Override
     public DatabaseResponse<?> sendQuery(String query) {
         return null;
     }

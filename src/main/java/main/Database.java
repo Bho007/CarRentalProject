@@ -13,5 +13,12 @@ public interface Database {
     DatabaseResponse<String> generateDailyBranchRentalReport(String branch);
     DatabaseResponse<String> generateDailyReturnReport();
     DatabaseResponse<String> generateDailyBranchReturnReport(String branch);
+    
+    DatabaseResponse<Boolean> locationExists(String location);
+    DatabaseResponse<String> reserveVehicle(VehicleTypeName type, String location);
+    
+        
     DatabaseResponse<?> sendQuery(String query);
+    
+    
 }
