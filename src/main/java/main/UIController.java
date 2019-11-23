@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -101,6 +102,12 @@ public class UIController {
     ScrollPane filterVehiclesPane;
     @FXML
     VBox filterVehiclesItemsBox;
+    @FXML
+    Button sortResultsByVid;
+    @FXML
+    Button sortResultsByYear;
+    @FXML
+    Button sortResultsByType;
     
     @FXML
     AnchorPane vehicleTypeSelectionPane;
@@ -320,7 +327,7 @@ public class UIController {
                     filterLocationTextField.getText(),
                     filterFromDatePicker.getValue() == null ? null : filterFromDatePicker.getValue().atStartOfDay(),
                     filterToDatePicker.getValue() == null ? null : filterToDatePicker.getValue().atStartOfDay());
-            // TODO log response
+            
             Main.previousResponse = response;
             logResponse(response);
             
@@ -330,6 +337,31 @@ public class UIController {
                     filterResultSuccessLabel.setText("No vehicles found.");
                     filterResultViewAllHyperlink.setText("");
                 } else {
+                    sortResultsByVid.setOnAction(event -> {
+                        filterVehiclesItemsBox.getChildren().clear();
+                        response.getValue().sort(Comparator.comparing(Vehicle::getVid));
+                        response.getValue().forEach(v -> filterVehiclesItemsBox.getChildren()
+                                .add(new Label("vid " + v.getVid() + ": " +
+                                        v.getYear() + " " + v.getMake() + " " + v.getModel() + ", " +
+                                        v.getVehicleTypeName().getName())));
+                    });
+                    sortResultsByYear.setOnAction(event -> {
+                        filterVehiclesItemsBox.getChildren().clear();
+                        response.getValue().sort(Comparator.comparing(Vehicle::getYear));
+                        response.getValue().forEach(v -> filterVehiclesItemsBox.getChildren()
+                                .add(new Label("vid " + v.getVid() + ": " +
+                                        v.getYear() + " " + v.getMake() + " " + v.getModel() + ", " +
+                                        v.getVehicleTypeName().getName())));
+                    });
+                    sortResultsByType.setOnAction(event -> {
+                        filterVehiclesItemsBox.getChildren().clear();
+                        response.getValue().sort(Comparator.comparing(Vehicle::getVehicleTypeName));
+                        response.getValue().forEach(v -> filterVehiclesItemsBox.getChildren()
+                                .add(new Label("vid " + v.getVid() + ": " +
+                                        v.getYear() + " " + v.getMake() + " " + v.getModel() + ", " +
+                                        v.getVehicleTypeName().getName())));
+                    });
+                    
                     filterResultBox.setVisible(true);
                     filterResultSuccessLabel.setText(response.getValue().size() +
                             " matching " +
