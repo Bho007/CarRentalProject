@@ -1,6 +1,5 @@
 package model;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,8 +7,7 @@ public class Reservation {
     private int confNo;
     private VehicleType vtName;
     private int cellPhone;
-    private LocalDateTime from;
-    private LocalDateTime to;
+    private TimePeriod timePeriod;
     private List<EquipType> equipmentTypesReserved;
 
     public int getConfNo() {
@@ -32,18 +30,15 @@ public class Reservation {
         return cellPhone;
     }
 
-    public LocalDateTime getFrom() {
-        return from;
+    public TimePeriod getTimePeriod() {
+        return timePeriod;
     }
 
-    public LocalDateTime getTo() {return to;}
-
-    public Reservation(int confNo, VehicleType vtName, int cellPhone, LocalDateTime from, LocalDateTime to) {
+    public Reservation(int confNo, VehicleType vtName, int cellPhone, TimePeriod timePeriod) {
         this.confNo = confNo;
         this.vtName = vtName;
         this.cellPhone = cellPhone;
-        this.from = from;
-        this.to = to;
+        this.timePeriod = timePeriod;
         this.equipmentTypesReserved = new ArrayList<>();
     }
 }

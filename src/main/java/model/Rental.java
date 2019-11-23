@@ -1,7 +1,6 @@
 package model;
 
 import java.sql.Date;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,8 +8,7 @@ public class Rental {
     private int rid;
     private Vehicle vehicle;
     private Customer customer;
-    private LocalDateTime from;
-    private LocalDateTime to;
+    private TimePeriod timePeriod;
     private int odometer;
     private String cardName;
     private String cardNo;
@@ -20,12 +18,11 @@ public class Rental {
     private Return rentalReturn;
     private List<Equipment> equipment;
 
-    public Rental(int rid, Vehicle vehicle, Customer customer, LocalDateTime from, LocalDateTime to, int odometer, String cardName, String cardNo, Date cardExpiryDate, Reservation reservation, List<Equipment> equipment) {
+    public Rental(int rid, Vehicle vehicle, Customer customer, TimePeriod timePeriod, int odometer, String cardName, String cardNo, Date cardExpiryDate, Reservation reservation, List<Equipment> equipment) {
         this.rid = rid;
         this.vehicle = vehicle;
         this.customer = customer;
-        this.from = from;
-        this.to = to;
+        this.timePeriod = timePeriod;
         this.odometer = odometer;
         this.cardName = cardName;
         this.cardNo = cardNo;
@@ -53,11 +50,9 @@ public class Rental {
         return customer;
     }
 
-    public LocalDateTime getFrom() {
-        return from;
+    public TimePeriod getTimePeriod() {
+        return timePeriod;
     }
-
-    public LocalDateTime getTo() {return to;}
 
     public int getOdometer() {
         return odometer;

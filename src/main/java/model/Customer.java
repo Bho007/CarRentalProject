@@ -28,6 +28,4 @@ public class Customer {
     public String getDlicense() {
         return dlicense;
     }
-
-
 }

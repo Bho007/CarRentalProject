@@ -90,13 +90,13 @@ public class Query {
             assert (rs != null);
             while (rs != null && rs.next()) {
                 Date date = rs.getDate("");
-                VehicleStatus status = VehicleStatus.toStatus(rs.getString("status").toUpperCase());
-                VehicleType type1 = (VehicleType) rs.getObject("vtname");
-                Vehicle vehicle = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
-                        rs.getString("make"), rs.getString("model"),
-                        rs.getString("year"), rs.getString("color"),
-                        rs.getInt("odomoter"), status, type1);
-                returnList.add(vehicle);
+//                VehicleStatus status = VehicleStatus.toStatus(rs.getString("status").toUpperCase());
+//                VehicleType type1 = (VehicleType) rs.getObject("vtname");
+//                Vehicle vehicle = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
+//                        rs.getString("make"), rs.getString("model"),
+//                        rs.getString("year"), rs.getString("color"),
+//                        rs.getInt("odomoter"), status, type1);
+                //returnList.add(vehicle);
             }
             rs.close();
             stmt.close();
