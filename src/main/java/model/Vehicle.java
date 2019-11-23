@@ -9,6 +9,17 @@ public class Vehicle
     public Vehicle(int vid, String vLicense, String make, String model, String year, String color, int odometer, VehicleStatus status, VehicleType vtName) {
 =======
 public class Vehicle {
+    private int vid;
+    private String vLicense;
+    private String make;
+    private String model;
+    private String year;
+    private String color;
+    private int odometer;
+    private VehicleStatus status;
+    private VehicleType vtName;
+    private VehicleTypeName vehicleTypeName;
+    
     public Vehicle(int vid, String vLicense, String make, String model, String year, String color, int odometer, VehicleStatus status, VehicleType vtName, VehicleTypeName vehicleTypeName) {
 >>>>>>> e3504e02ab30808f2e1835fa638366117272046b
         this.vid = vid;
@@ -22,8 +33,6 @@ public class Vehicle {
         this.vtName = vtName;
         this.vehicleTypeName = vehicleTypeName;
     }
-    
-    private int vid;
     
     public int getVid() {
         return vid;
@@ -64,14 +73,4 @@ public class Vehicle {
     public VehicleTypeName getVehicleTypeName() {
         return vehicleTypeName;
     }
-    
-    private String vLicense;
-    private String make;
-    private String model;
-    private String year;
-    private String color;
-    private int odometer;
-    private VehicleStatus status;
-    private VehicleType vtName;
-    private VehicleTypeName vehicleTypeName;
 }

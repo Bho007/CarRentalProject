@@ -8,14 +8,15 @@ public enum VehicleTypeName {
     FULLSIZE("Fullsize"),
     SUV("SUV"),
     TRUCK("Truck");
-    
+
     private String name;
-    
+
     VehicleTypeName(String name) {
         this.name = name;
     }
-    
+
     public String getName() {
         return name;
     }
 }
+
