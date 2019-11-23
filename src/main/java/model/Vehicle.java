@@ -1,6 +1,17 @@
 package model;
 
 public class Vehicle {
+    private int vid;
+    private String vLicense;
+    private String make;
+    private String model;
+    private String year;
+    private String color;
+    private int odometer;
+    private VehicleStatus status;
+    private VehicleType vtName;
+    private VehicleTypeName vehicleTypeName;
+    
     public Vehicle(int vid, String vLicense, String make, String model, String year, String color, int odometer, VehicleStatus status, VehicleType vtName, VehicleTypeName vehicleTypeName) {
         this.vid = vid;
         this.vLicense = vLicense;
@@ -13,8 +24,6 @@ public class Vehicle {
         this.vtName = vtName;
         this.vehicleTypeName = vehicleTypeName;
     }
-    
-    private int vid;
     
     public int getVid() {
         return vid;
@@ -55,14 +64,4 @@ public class Vehicle {
     public VehicleTypeName getVehicleTypeName() {
         return vehicleTypeName;
     }
-    
-    private String vLicense;
-    private String make;
-    private String model;
-    private String year;
-    private String color;
-    private int odometer;
-    private VehicleStatus status;
-    private VehicleType vtName;
-    private VehicleTypeName vehicleTypeName;
 }

@@ -7,11 +7,14 @@ import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import model.Vehicle;
-import model.VehicleType;
 import model.VehicleTypeName;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDate;
@@ -50,6 +53,14 @@ public class UIController {
     static String confirmationNumber;
     static String estimatedCost;
     
+    static String rentalID;
+    static String rentalEndDate;
+    static String rentalEndTimeHour;
+    static String rentalEndTimeMinute;
+    static String rentalEndTimePeriod;
+    static String odometer;
+    static boolean gasTankIsFull;
+    
     @FXML
     StackPane globalPane;
     
@@ -77,9 +88,19 @@ public class UIController {
     Button filterSearchButton;
     @FXML
     Label filterSearchErrorLabel;
+    @FXML
+    HBox filterResultBox;
+    @FXML
+    Label filterResultSuccessLabel;
+    @FXML
+    Hyperlink filterResultViewAllHyperlink;
     
     @FXML
     AnchorPane filterResultsPane;
+    @FXML
+    ScrollPane filterVehiclesPane;
+    @FXML
+    VBox filterVehiclesItemsBox;
     
     @FXML
     AnchorPane vehicleTypeSelectionPane;
@@ -205,11 +226,27 @@ public class UIController {
     
     @FXML
     AnchorPane returnVehicleStatusPane;
-    
+    @FXML
+    TextField returnVehicleStatusRentalIDTextField;
+    @FXML
+    DatePicker returnVehicleRentalEndDatePicker;
+    @FXML
+    TextField returnVehicleEndHourTextField;
+    @FXML
+    TextField returnVehicleEndMinuteTextField;
+    @FXML
+    ComboBox<String> returnVehiclePeriodComboBox;
+    @FXML
+    TextField returnVehicleOdometerTextField;
+    @FXML
+    CheckBox returnVehicleFullGasCheckBox;
+    @FXML
+    Button returnVehicleProcessButton;
+    @FXML
+    Label returnVehicleStatusErrorLabel;
     
     @FXML
     AnchorPane returnVehicleCostBreakdownPane;
-    
     
     @FXML
     AnchorPane generateReportPane;
@@ -266,6 +303,9 @@ public class UIController {
     
     @FXML
     public void filterVehicles() {
+        filterSearchErrorLabel.setVisible(false);
+        filterResultBox.setVisible(false);
+        
         if (filterFromDatePicker.getValue() != null && filterFromDatePicker.getValue().isBefore(ChronoLocalDate.from(LocalDateTime.now().minusYears(10)))) {
             filterSearchErrorLabel.setVisible(true);
             filterSearchErrorLabel.setText("Error: \"To\" Date out of range");
@@ -276,10 +316,42 @@ public class UIController {
             filterSearchErrorLabel.setVisible(true);
             filterSearchErrorLabel.setText("Error: \"From\" Date after \"To\" Date");
         } else {
-            DatabaseResponse<List<Vehicle>> response = Main.database.getVehicles(filterTypeComboBox.getValue().equals("Any") ? null : VehicleTypeName.valueOf(filterTypeComboBox.getValue()), 
-                    filterLocationTextField.getText(), 
+            DatabaseResponse<List<Vehicle>> response = Main.database.getVehicles(filterTypeComboBox.getValue().equals("Any") ? null : VehicleTypeName.valueOf(filterTypeComboBox.getValue()),
+                    filterLocationTextField.getText(),
                     filterFromDatePicker.getValue() == null ? null : filterFromDatePicker.getValue().atStartOfDay(),
                     filterToDatePicker.getValue() == null ? null : filterToDatePicker.getValue().atStartOfDay());
+            // TODO log response
+            Main.previousResponse = response;
+            logResponse(response);
+            
+            if (response.isSuccess()) {
+                if (response.getValue().isEmpty()) {
+                    filterResultBox.setVisible(true);
+                    filterResultSuccessLabel.setText("No vehicles found.");
+                    filterResultViewAllHyperlink.setText("");
+                } else {
+                    filterResultBox.setVisible(true);
+                    filterResultSuccessLabel.setText(response.getValue().size() +
+                            " matching " +
+                            (response.getValue().size() == 1 ? "vehicle" : "vehicles") +
+                            " found.");
+                    filterResultViewAllHyperlink.setText("View all");
+                    filterVehiclesItemsBox.getChildren().clear();
+                    filterResultViewAllHyperlink.setOnAction(event -> {
+                        response.getValue().forEach(v -> filterVehiclesItemsBox.getChildren()
+                                .add(new Label("vid " + v.getVid() + ": " +
+                                        v.getYear() + " " + v.getMake() + " " + v.getModel() + ", " +
+                                        v.getVehicleTypeName().getName())));
+                        makeAllPanesInvisible();
+                        filterResultsPane.setVisible(true);
+                        filterVehiclesPane.setVisible(true);
+                        filterVehiclesItemsBox.setVisible(true);
+                    });
+                }
+            } else {
+                filterSearchErrorLabel.setVisible(true);
+                filterSearchErrorLabel.setText(response.getResponse());
+            }
             // TODO display query
         }
     }
@@ -437,6 +509,8 @@ public class UIController {
     
     @FXML
     public void processCustomerInformation(ActionEvent actionEvent) {
+        customerInformationErrorLabel.setVisible(false);
+        
         if (customerInformationPhoneTextField.getText().isBlank()) {
             customerInformationErrorLabel.setText("Phone is required");
             customerInformationErrorLabel.setVisible(true);
@@ -539,7 +613,60 @@ public class UIController {
     
     @FXML
     public void processPayment(ActionEvent actionEvent) {
+        paymentInformationErrorLabel.setVisible(false);
         
+        if (vehiclePaymentInformationCashCheckBox.isSelected()) {
+            paidWithCash = true;
+        } else {
+            if (vehiclePaymentInformationCreditCardNumberTextField.getText().isBlank()) {
+                paymentInformationErrorLabel.setVisible(true);
+                paymentInformationErrorLabel.setText("Missing credit card number");
+                return;
+            }
+            
+            if (!vehiclePaymentInformationCreditCardNumberTextField.getText().matches("\\d+")) {
+                paymentInformationErrorLabel.setVisible(true);
+                paymentInformationErrorLabel.setText("Invalid credit card number");
+                return;
+            }
+            
+            creditCardNumber = vehiclePaymentInformationCreditCardNumberTextField.getText();
+            expiryMonth = vehiclePaymentInformationCreditCardExpiryMonthComboBox.getValue();
+            expiryYear = vehiclePaymentInformationCreditCardExpiryYearComboBox.getValue();
+            creditCardType = vehiclePaymentInformationCreditCardTypeComboBox.getValue();
+        }
+        
+        if (isRental) {
+            makeAllPanesInvisible();
+            confirmationPaneTitleLabel.setText("Rent Vehicles");
+            confirmationTitledPane.setText("Rental Complete");
+            confirmationPane.setVisible(true);
+            
+            // TODO
+            // query db to set rental
+            // get confirmation number, estimated cost
+            confirmationCustomerNameLabel.setText(name);
+            confirmationDriversLicenseLabel.setText(driversLicense);
+            confirmationVehicleTypeLabel.setText(vehicleTypeName);
+            confirmationLocationLabel.setText(location);
+            // TODO
+        } else if (isReturn) {
+            makeAllPanesInvisible();
+            confirmationPaneTitleLabel.setText("Return Vehicles");
+            confirmationTitledPane.setText("Return Complete");
+            confirmationPane.setVisible(true);
+            
+            confirmationNumberLabel.setText(rentalID);
+            confirmationCustomerNameLabel.setText(name);
+            confirmationDriversLicenseLabel.setText(driversLicense);
+            confirmationVehicleTypeLabel.setText(vehicleTypeName);
+            confirmationLocationLabel.setText(location);
+            // TODO calculate estimated cost + BREAKDOWN
+        } else {
+            paymentInformationErrorLabel.setVisible(true);
+            paymentInformationErrorLabel.setText("Something went wrong - please start over.");
+            return;
+        }
     }
     
     @FXML
@@ -598,13 +725,10 @@ public class UIController {
                 vehiclePaymentInformationCreditCardTypeComboBox.getItems().add("Mastercard");
                 vehiclePaymentInformationCreditCardExpiryMonthComboBox.getItems().add("01");
                 vehiclePaymentInformationCreditCardExpiryMonthComboBox.getSelectionModel().selectFirst();
-                IntStream.rangeClosed(2, 12).boxed().map(Object::toString).map(e -> {
-                    if (e.length() < 2) {
-                        return "0" + e;
-                    } else {
-                        return e;
-                    }
-                }).forEach(e -> vehiclePaymentInformationCreditCardExpiryMonthComboBox.getItems().add(e));
+                IntStream.rangeClosed(2, 12).boxed()
+                        .map(Object::toString)
+                        .map(e -> e.length() < 2 ? "0" + e : e)
+                        .forEach(e -> vehiclePaymentInformationCreditCardExpiryMonthComboBox.getItems().add(e));
                 IntStream.rangeClosed(LocalDateTime.now().getYear(), LocalDateTime.now().getYear() + 10).boxed()
                         .map(Object::toString).forEach(e -> vehiclePaymentInformationCreditCardExpiryYearComboBox.getItems().add(e));
                 vehiclePaymentInformationCreditCardExpiryYearComboBox.getSelectionModel().selectFirst();
@@ -616,24 +740,106 @@ public class UIController {
     public void showReturnVehiclePane(ActionEvent actionEvent) {
         makeAllPanesInvisible();
         returnVehicleStatusPane.setVisible(true);
+        setReturn(true);
     }
     
     @FXML
     public void showGenerateReportScreen(ActionEvent actionEvent) {
         makeAllPanesInvisible();
         generateReportPane.setVisible(true);
-        generateReportTypeComboBox.getItems().add("Daily Rentals");
-        generateReportTypeComboBox.getSelectionModel().selectFirst();
-        generateReportTypeComboBox.getItems().add("Daily Rentals for Branch");
-        generateReportTypeComboBox.getItems().add("Daily Returns");
-        generateReportTypeComboBox.getItems().add("Daily Returns for Branch");
-        generateReportTypeComboBox.setOnAction(event -> {
-            if (generateReportTypeComboBox.getValue().contains("Branch")) {
-                generateReportTypeBranchBox.setVisible(true);
-            } else {
-                generateReportTypeBranchBox.setVisible(false);
-            }
-        });
+        
+        if (generateReportTypeComboBox.getItems().isEmpty()) {
+            generateReportTypeComboBox.getItems().add("Daily Rentals");
+            generateReportTypeComboBox.getSelectionModel().selectFirst();
+            generateReportTypeComboBox.getItems().add("Daily Rentals for Branch");
+            generateReportTypeComboBox.getItems().add("Daily Returns");
+            generateReportTypeComboBox.getItems().add("Daily Returns for Branch");
+            generateReportTypeComboBox.setOnAction(event -> {
+                if (generateReportTypeComboBox.getValue().contains("Branch")) {
+                    generateReportTypeBranchBox.setVisible(true);
+                } else {
+                    generateReportTypeBranchBox.setVisible(false);
+                }
+            });
+        }
+    }
+    
+    @FXML
+    public void processReturn(ActionEvent actionEvent) {
+        returnVehicleStatusErrorLabel.setVisible(false);
+        
+        if (returnVehicleStatusRentalIDTextField.getText().isBlank()) {
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Missing rental ID");
+            return;
+        }
+        
+        if (returnVehicleRentalEndDatePicker.getValue() == null) {
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Invalid Rental End Date");
+            return;
+        }
+        
+        if (returnVehicleRentalEndDatePicker.getValue().minusYears(10).isAfter(LocalDate.now())) {
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Invalid Rental End Date");
+            return;
+        }
+        
+        if (!returnVehicleEndHourTextField.getText().matches("[0]?[0-9]|10|11|12")) {
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Invalid Rental End Hour");
+            return;
+        }
+        
+        if (!returnVehicleEndMinuteTextField.getText().matches("[0]?[0-9]|[0-5][0-9]")) {
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Invalid Rental End Minute");
+            return;
+        }
+        
+        if (!returnVehicleOdometerTextField.getText().matches("\\d+")) {
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Invalid Odometer value");
+            return;
+        }
+        
+        
+        // TODO
+        // get details for rental
+        // check if rental exists
+        // check that return time is after rental time
+        
+        makeAllPanesInvisible();
+        paymentInformationPane.setVisible(true);
+        if (vehiclePaymentInformationCreditCardExpiryMonthComboBox.getSelectionModel().isEmpty()) {
+            vehiclePaymentInformationCreditCardTypeComboBox.getItems().add("VISA");
+            vehiclePaymentInformationCreditCardTypeComboBox.getSelectionModel().selectFirst();
+            vehiclePaymentInformationCreditCardTypeComboBox.getItems().add("Mastercard");
+            vehiclePaymentInformationCreditCardExpiryMonthComboBox.getItems().add("01");
+            vehiclePaymentInformationCreditCardExpiryMonthComboBox.getSelectionModel().selectFirst();
+            IntStream.rangeClosed(2, 12).boxed()
+                    .map(Object::toString)
+                    .map(e -> e.length() < 2 ? "0" + e : e)
+                    .forEach(e -> vehiclePaymentInformationCreditCardExpiryMonthComboBox.getItems().add(e));
+            IntStream.rangeClosed(LocalDateTime.now().getYear(), LocalDateTime.now().getYear() + 10).boxed()
+                    .map(Object::toString).forEach(e -> vehiclePaymentInformationCreditCardExpiryYearComboBox.getItems().add(e));
+            vehiclePaymentInformationCreditCardExpiryYearComboBox.getSelectionModel().selectFirst();
+            vehiclePaymentInformationCashBox.setVisible(true);
+            vehiclePaymentInformationCashCheckBox.setOnAction(event -> {
+                if (vehiclePaymentInformationCashCheckBox.isSelected()) {
+                    vehiclePaymentInformationCreditCardNumberTextField.setDisable(true);
+                    vehiclePaymentInformationCreditCardExpiryMonthComboBox.setDisable(true);
+                    vehiclePaymentInformationCreditCardExpiryYearComboBox.setDisable(true);
+                    vehiclePaymentInformationCreditCardTypeComboBox.setDisable(true);
+                } else {
+                    vehiclePaymentInformationCreditCardNumberTextField.setDisable(false);
+                    vehiclePaymentInformationCreditCardExpiryMonthComboBox.setDisable(false);
+                    vehiclePaymentInformationCreditCardExpiryYearComboBox.setDisable(false);
+                    vehiclePaymentInformationCreditCardTypeComboBox.setDisable(false);
+                }
+            });
+        }
     }
     
     @FXML
@@ -718,5 +924,20 @@ public class UIController {
         isReservation = false;
         isRental = false;
         isReturn = value;
+    }
+    
+    private void logResponse(DatabaseResponse<?> response) {
+        String formatted = "QUERY: " + response.getQuery() + "\n" +
+                "SUCCESS: " + response.isSuccess() + "\n" +
+                "RESPONSE: " + response.getResponse() + "\n\n";
+        
+        System.out.println(formatted);
+        
+        try {
+            Files.writeString(Main.logFile, formatted, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Unable to write to log file.");
+        }
     }
 }

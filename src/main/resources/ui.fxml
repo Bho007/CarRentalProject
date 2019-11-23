@@ -8,7 +8,6 @@
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Pagination?>
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
@@ -230,7 +229,26 @@
                               <Insets bottom="10.0" left="10.0" right="10.0" />
                            </padding>
                         </HBox>
-                        <Pagination fx:id="filterVehiclesPage" maxPageIndicatorCount="5" pageCount="5" VBox.vgrow="ALWAYS" />
+                        <TitledPane animated="false" collapsible="false" text="Results">
+                           <content>
+                              <ScrollPane fx:id="filterVehiclesPane">
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                 </padding>
+                                 <content>
+                                    <VBox fx:id="filterVehiclesItemsBox">
+                                       <children>
+                                          <HBox prefHeight="100.0" prefWidth="200.0">
+                                             <children>
+                                                <Label text="No Vehicles Found" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </content>
+                              </ScrollPane>
+                           </content>
+                        </TitledPane>
                      </children>
                      <padding>
                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
@@ -579,12 +597,12 @@
                         <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="159.0" spacing="10.0">
                            <children>
                               <Label text="Battery/Gas Tank is Full" />
-                              <CheckBox fx:id="returnVehicleFullGasCheckBOx" mnemonicParsing="false" />
+                              <CheckBox fx:id="returnVehicleFullGasCheckBox" mnemonicParsing="false" />
                            </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                            <children>
-                              <Button fx:id="returnVehicleProcessButton" mnemonicParsing="false" text="Process Return" />
+                              <Button fx:id="returnVehicleProcessButton" mnemonicParsing="false" onAction="#processReturn" text="Process Return" />
                               <Label fx:id="returnVehicleStatusErrorLabel" style="-fx-border-color: red;" text="Error" visible="false">
                                  <padding>
                                     <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
@@ -643,7 +661,7 @@
                                                 <ComboBox fx:id="vehiclePaymentInformationCreditCardTypeComboBox" prefWidth="150.0" />
                                              </children>
                                           </HBox>
-                                          <HBox fx:id="vehiclePaymentInformationCashBox" spacing="10.0">
+                                          <HBox fx:id="vehiclePaymentInformationCashBox" spacing="10.0" visible="false">
                                              <children>
                                                 <Label text="Cash" />
                                                 <CheckBox fx:id="vehiclePaymentInformationCashCheckBox" mnemonicParsing="false" />
@@ -657,7 +675,7 @@
                         </TitledPane>
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                            <children>
-                              <Button fx:id="paymentInformationConfirmButton" mnemonicParsing="false" text="Confirm" />
+                              <Button fx:id="paymentInformationConfirmButton" mnemonicParsing="false" onAction="#processPayment" text="Confirm" />
                               <Label fx:id="paymentInformationErrorLabel" style="-fx-border-color: red;" text="Error" visible="false">
                                  <padding>
                                     <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
@@ -706,11 +724,6 @@
                               </AnchorPane>
                            </content>
                         </TitledPane>
-                        <HBox>
-                           <children>
-                              <Button fx:id="returnVehicleProcessPaymentButton" mnemonicParsing="false" text="Process Payment" />
-                           </children>
-                        </HBox>
                      </children>
                      <padding>
                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
@@ -828,7 +841,7 @@
                               <Insets bottom="10.0" left="10.0" right="10.0" />
                            </padding>
                         </HBox>
-                        <TitledPane fx:id="generateReportTitledPane" animated="false" text="Parameters" VBox.vgrow="ALWAYS">
+                        <TitledPane fx:id="generateReportTitledPane" animated="false" collapsible="false" text="Parameters" VBox.vgrow="ALWAYS">
                            <content>
                               <AnchorPane minHeight="0.0" minWidth="0.0">
                                  <children>
