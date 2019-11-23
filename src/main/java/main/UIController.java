@@ -8,12 +8,15 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
+import model.Vehicle;
+import model.VehicleType;
 import model.VehicleTypeName;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class UIController {
@@ -263,11 +266,6 @@ public class UIController {
     
     @FXML
     public void filterVehicles() {
-        String type = filterTypeComboBox.getValue();
-        String location = filterLocationTextField.getText();
-        String from = filterFromDatePicker.getValue() != null ? filterFromDatePicker.getValue().toString() : "";
-        String to = filterToDatePicker.getValue() != null ? filterToDatePicker.getValue().toString() : "";
-        
         if (filterFromDatePicker.getValue() != null && filterFromDatePicker.getValue().isBefore(ChronoLocalDate.from(LocalDateTime.now().minusYears(10)))) {
             filterSearchErrorLabel.setVisible(true);
             filterSearchErrorLabel.setText("Error: \"To\" Date out of range");
@@ -278,10 +276,12 @@ public class UIController {
             filterSearchErrorLabel.setVisible(true);
             filterSearchErrorLabel.setText("Error: \"From\" Date after \"To\" Date");
         } else {
-            // TODO run query
+            DatabaseResponse<List<Vehicle>> response = Main.database.getVehicles(filterTypeComboBox.getValue().equals("Any") ? null : VehicleTypeName.valueOf(filterTypeComboBox.getValue()), 
+                    filterLocationTextField.getText(), 
+                    filterFromDatePicker.getValue() == null ? null : filterFromDatePicker.getValue().atStartOfDay(),
+                    filterToDatePicker.getValue() == null ? null : filterToDatePicker.getValue().atStartOfDay());
+            // TODO display query
         }
-        
-        // CompletableFuture.supplyAsync(() -> database.getVehicles(type, location, from, to)).whencom;
     }
     
     @FXML
