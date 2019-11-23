@@ -64,12 +64,12 @@
                   </HBox>
                   <HBox layoutX="20.0" layoutY="179.0">
                      <children>
-                        <Button fx:id="returnVehicleButton" mnemonicParsing="false" onAction="#returnVehicle" text="Return a Vehicle" />
+                        <Button fx:id="returnVehicleButton" mnemonicParsing="false" onAction="#showReturnVehiclePane" text="Return a Vehicle" />
                      </children>
                   </HBox>
                   <HBox>
                      <children>
-                        <Button fx:id="generateReportButton" mnemonicParsing="false" onAction="#generateReport" text="Generate Report" />
+                        <Button fx:id="generateReportButton" mnemonicParsing="false" onAction="#showGenerateReportScreen" text="Generate Report" />
                      </children>
                   </HBox>
                   <HBox>
@@ -633,14 +633,20 @@
                                           <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="10.0" spacing="10.0">
                                              <children>
                                                 <Label text="Expiry" />
-                                                <ComboBox fx:id="vehiclePaymentInformationCreditCardExpiryMonthComboBox" prefWidth="150.0" />
-                                                <ComboBox fx:id="vehiclePaymentInformationCreditCardExpiryYearComboBox" layoutX="52.0" layoutY="10.0" prefWidth="150.0" />
+                                                <ComboBox fx:id="vehiclePaymentInformationCreditCardExpiryMonthComboBox" />
+                                                <ComboBox fx:id="vehiclePaymentInformationCreditCardExpiryYearComboBox" layoutX="52.0" layoutY="10.0" />
                                              </children>
                                           </HBox>
                                           <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="40.0" spacing="10.0">
                                              <children>
                                                 <Label text="Type" />
                                                 <ComboBox fx:id="vehiclePaymentInformationCreditCardTypeComboBox" prefWidth="150.0" />
+                                             </children>
+                                          </HBox>
+                                          <HBox fx:id="vehiclePaymentInformationCashBox" spacing="10.0">
+                                             <children>
+                                                <Label text="Cash" />
+                                                <CheckBox fx:id="vehiclePaymentInformationCashCheckBox" mnemonicParsing="false" />
                                              </children>
                                           </HBox>
                                        </children>
@@ -834,9 +840,16 @@
                                                 <ComboBox fx:id="generateReportTypeComboBox" prefWidth="150.0" />
                                              </children>
                                           </HBox>
+                                          <HBox fx:id="generateReportTypeBranchBox" alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0" visible="false">
+                                             <children>
+                                                <Label text="Branch" />
+                                                <TextField fx:id="generateReportTypeBranchTextField" />
+                                             </children>
+                                          </HBox>
                                           <HBox alignment="CENTER_LEFT" spacing="5.0">
                                              <children>
-                                                <Button fx:id="generateReportButton" mnemonicParsing="false" text="Generate" />
+                                                <Button fx:id="generateReportButton" mnemonicParsing="false" onAction="#generateReport" text="Generate" />
+                                                <Label fx:id="generateReportErrorLabel" style="-fx-border-color: red;" text="Label" visible="false" />
                                              </children>
                                           </HBox>
                                        </children>
@@ -845,11 +858,11 @@
                               </AnchorPane>
                            </content>
                         </TitledPane>
-                        <ScrollPane fx:id="generateReportScrollPane" prefHeight="200.0" prefWidth="200.0" visible="false">
+                        <ScrollPane fx:id="generateReportScrollPane" visible="false">
                            <content>
-                              <AnchorPane fx:id="generateReportResultAnchorPane1" minHeight="0.0" minWidth="0.0">
+                              <AnchorPane fx:id="generateReportResultAnchorPane" minHeight="0.0" minWidth="0.0">
                                  <children>
-                                    <Text fx:id="generateReportResultText1" strokeType="OUTSIDE" strokeWidth="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                    <Text fx:id="generateReportResultText" strokeType="OUTSIDE" strokeWidth="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                                  </children>
                               </AnchorPane>
                            </content>
@@ -880,7 +893,7 @@
                               <Insets bottom="10.0" left="10.0" right="10.0" />
                            </padding>
                         </HBox>
-                        <TitledPane fx:id="generateReportTitledPane" text="Edit" VBox.vgrow="ALWAYS">
+                        <TitledPane fx:id="viewEditDatabaseTitledPane" text="Edit" VBox.vgrow="ALWAYS">
                            <content>
                               <AnchorPane minHeight="0.0" minWidth="0.0">
                                  <children>
@@ -889,12 +902,13 @@
                                           <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
                                              <children>
                                                 <Label text="Query" />
-                                                <TextArea prefHeight="200.0" prefWidth="200.0" wrapText="true" />
+                                                <TextArea fx:id="viewEditDatabaseQueryTextArea" prefHeight="200.0" prefWidth="200.0" wrapText="true" />
                                              </children>
                                           </HBox>
                                           <HBox alignment="CENTER_LEFT" spacing="5.0">
                                              <children>
-                                                <Button fx:id="generateReportGenerateButton" mnemonicParsing="false" text="Send Query" />
+                                                <Button fx:id="viewEditDatabaseQueryButton" mnemonicParsing="false" onAction="#sendQuery" text="Send Query" />
+                                                <Label fx:id="viewEditDatabaseQueryErrorLabel" style="-fx-border-color: red;" text="Label" visible="false" />
                                              </children>
                                           </HBox>
                                        </children>

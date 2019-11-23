@@ -7,12 +7,14 @@ import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.text.Text;
 import model.VehicleTypeName;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public class UIController {
     static boolean isReservation;
@@ -40,6 +42,7 @@ public class UIController {
     static String expiryMonth;
     static String expiryYear;
     static String creditCardType;
+    static boolean paidWithCash;
     
     static String confirmationNumber;
     static String estimatedCost;
@@ -179,20 +182,71 @@ public class UIController {
     Label rentVehicleInitialErrorLabel;
     
     @FXML
-    AnchorPane returnVehicleStatusPane;
+    AnchorPane paymentInformationPane;
+    @FXML
+    TextField vehiclePaymentInformationCreditCardNumberTextField;
+    @FXML
+    ComboBox<String> vehiclePaymentInformationCreditCardExpiryMonthComboBox;
+    @FXML
+    ComboBox<String> vehiclePaymentInformationCreditCardExpiryYearComboBox;
+    @FXML
+    ComboBox<String> vehiclePaymentInformationCreditCardTypeComboBox;
+    @FXML
+    HBox vehiclePaymentInformationCashBox;
+    @FXML
+    CheckBox vehiclePaymentInformationCashCheckBox;
+    @FXML
+    Button paymentInformationConfirmButton;
+    @FXML
+    Label paymentInformationErrorLabel;
     
     @FXML
-    AnchorPane paymentInformationPane;
+    AnchorPane returnVehicleStatusPane;
+    
     
     @FXML
     AnchorPane returnVehicleCostBreakdownPane;
     
+    
     @FXML
     AnchorPane generateReportPane;
+    @FXML
+    TitledPane generateReportTitledPane;
+    @FXML
+    ComboBox<String> generateReportTypeComboBox;
+    @FXML
+    HBox generateReportTypeBranchBox;
+    @FXML
+    TextField generateReportTypeBranchTextField;
+    @FXML
+    Button generateReportButton;
+    @FXML
+    Label generateReportErrorLabel;
+    @FXML
+    ScrollPane generateReportScrollPane;
+    @FXML
+    AnchorPane generateReportResultAnchorPane;
+    @FXML
+    Text generateReportResultText;
     
     @FXML
     AnchorPane viewEditDatabasePane;
-    
+    @FXML
+    TitledPane viewEditDatabaseTitledPane;
+    @FXML
+    TextArea viewEditDatabaseQueryTextArea;
+    @FXML
+    Button viewEditDatabaseQueryButton;
+    @FXML
+    Label viewEditDatabaseQueryErrorLabel;
+    @FXML
+    TitledPane viewEditDatabaseResultTitledPane;
+    @FXML
+    ScrollPane viewEditDatabaseResultScrollPane;
+    @FXML
+    AnchorPane viewEditDatabaseResultAnchorPane;
+    @FXML
+    Text viewEditDatabaseResultText;
     
     @FXML
     public void viewVehicles(ActionEvent actionEvent) {
@@ -455,6 +509,28 @@ public class UIController {
             confirmationPaneTitleLabel.setText("Rent Vehicles");
             confirmationTitledPane.setText("Rental Complete");
             paymentInformationPane.setVisible(true);
+            
+            if (vehiclePaymentInformationCreditCardExpiryMonthComboBox.getSelectionModel().isEmpty()) {
+                vehiclePaymentInformationCreditCardTypeComboBox.getItems().add("VISA");
+                vehiclePaymentInformationCreditCardTypeComboBox.getSelectionModel().selectFirst();
+                vehiclePaymentInformationCreditCardTypeComboBox.getItems().add("Mastercard");
+                vehiclePaymentInformationCreditCardExpiryMonthComboBox.getItems().add("01");
+                vehiclePaymentInformationCreditCardExpiryMonthComboBox.getSelectionModel().selectFirst();
+                IntStream.rangeClosed(2, 12).boxed().map(Object::toString).map(e -> {
+                    if (e.length() < 2) {
+                        return "0" + e;
+                    } else {
+                        return e;
+                    }
+                }).forEach(e -> vehiclePaymentInformationCreditCardExpiryMonthComboBox.getItems().add(e));
+                IntStream.rangeClosed(LocalDateTime.now().getYear(), LocalDateTime.now().getYear() + 10).boxed()
+                        .map(Object::toString).forEach(e -> vehiclePaymentInformationCreditCardExpiryYearComboBox.getItems().add(e));
+                vehiclePaymentInformationCreditCardExpiryYearComboBox.getSelectionModel().selectFirst();
+                vehiclePaymentInformationCashBox.setVisible(false);
+                if (vehiclePaymentInformationCashCheckBox.isSelected()) {
+                    vehiclePaymentInformationCashCheckBox.fire();
+                }
+            }
         } else {
             customerInformationErrorLabel.setText("Something went wrong - please start over.");
             customerInformationErrorLabel.setVisible(true);
@@ -516,25 +592,97 @@ public class UIController {
             
             // TODO generate rental confirmation number and add to confirmation screen
             paymentInformationPane.setVisible(true);
+            if (vehiclePaymentInformationCreditCardExpiryMonthComboBox.getSelectionModel().isEmpty()) {
+                vehiclePaymentInformationCreditCardTypeComboBox.getItems().add("VISA");
+                vehiclePaymentInformationCreditCardTypeComboBox.getSelectionModel().selectFirst();
+                vehiclePaymentInformationCreditCardTypeComboBox.getItems().add("Mastercard");
+                vehiclePaymentInformationCreditCardExpiryMonthComboBox.getItems().add("01");
+                vehiclePaymentInformationCreditCardExpiryMonthComboBox.getSelectionModel().selectFirst();
+                IntStream.rangeClosed(2, 12).boxed().map(Object::toString).map(e -> {
+                    if (e.length() < 2) {
+                        return "0" + e;
+                    } else {
+                        return e;
+                    }
+                }).forEach(e -> vehiclePaymentInformationCreditCardExpiryMonthComboBox.getItems().add(e));
+                IntStream.rangeClosed(LocalDateTime.now().getYear(), LocalDateTime.now().getYear() + 10).boxed()
+                        .map(Object::toString).forEach(e -> vehiclePaymentInformationCreditCardExpiryYearComboBox.getItems().add(e));
+                vehiclePaymentInformationCreditCardExpiryYearComboBox.getSelectionModel().selectFirst();
+            }
         }
     }
     
     @FXML
-    public void returnVehicle(ActionEvent actionEvent) {
+    public void showReturnVehiclePane(ActionEvent actionEvent) {
         makeAllPanesInvisible();
         returnVehicleStatusPane.setVisible(true);
     }
     
     @FXML
-    public void generateReport(ActionEvent actionEvent) {
+    public void showGenerateReportScreen(ActionEvent actionEvent) {
         makeAllPanesInvisible();
         generateReportPane.setVisible(true);
+        generateReportTypeComboBox.getItems().add("Daily Rentals");
+        generateReportTypeComboBox.getSelectionModel().selectFirst();
+        generateReportTypeComboBox.getItems().add("Daily Rentals for Branch");
+        generateReportTypeComboBox.getItems().add("Daily Returns");
+        generateReportTypeComboBox.getItems().add("Daily Returns for Branch");
+        generateReportTypeComboBox.setOnAction(event -> {
+            if (generateReportTypeComboBox.getValue().contains("Branch")) {
+                generateReportTypeBranchBox.setVisible(true);
+            } else {
+                generateReportTypeBranchBox.setVisible(false);
+            }
+        });
+    }
+    
+    @FXML
+    public void generateReport(ActionEvent actionEvent) {
+        DatabaseResponse<String> response;
+        
+        if (generateReportTypeBranchBox.isVisible()) {
+            if (generateReportTypeBranchTextField.getText().isBlank()) {
+                generateReportErrorLabel.setVisible(true);
+                generateReportErrorLabel.setText("Invalid Branch");
+                return;
+            }
+            
+            generateReportErrorLabel.setVisible(false);
+            if (generateReportTypeComboBox.getValue().contains("Rentals")) {
+                response = Main.database.generateDailyBranchRentalReport(generateReportTypeBranchTextField.getText());
+            } else {
+                response = Main.database.generateDailyBranchReturnReport(generateReportTypeBranchTextField.getText());
+            }
+        } else {
+            generateReportErrorLabel.setVisible(false);
+            if (generateReportTypeComboBox.getValue().contains("Rentals")) {
+                response = Main.database.generateDailyRentalReport();
+            } else {
+                response = Main.database.generateDailyReturnReport();
+            }
+        }
+        
+        generateReportScrollPane.setVisible(true);
+        generateReportResultText.setText(response.getResponse());
     }
     
     @FXML
     public void viewEditDatabase(ActionEvent actionEvent) {
         makeAllPanesInvisible();
         viewEditDatabasePane.setVisible(true);
+    }
+    
+    @FXML
+    public void sendQuery(ActionEvent actionEvent) {
+        if (viewEditDatabaseQueryTextArea.getText().isBlank()) {
+            viewEditDatabaseQueryErrorLabel.setVisible(true);
+            viewEditDatabaseQueryErrorLabel.setText("Missing Query");
+            return;
+        }
+        
+        DatabaseResponse<?> response = Main.database.sendQuery(viewEditDatabaseQueryTextArea.getText());
+        viewEditDatabaseResultTitledPane.setVisible(true);
+        viewEditDatabaseResultText.setText(response.getResponse());
     }
     
     @FXML

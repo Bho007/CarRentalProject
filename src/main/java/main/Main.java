@@ -8,8 +8,7 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
     static Database database;
-    static String previousQuery = "";
-    static String previousResult = "";
+    static DatabaseResponse<?> previousResponse;
     
     public static void main(String[] args) {
         System.out.println("Hello World");
