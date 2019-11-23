@@ -2,6 +2,9 @@ package jdbc;
 
 //import model.TimePeriod;
 
+import main.Database;
+import main.DatabaseResponse;
+import main.TestDatabaseResponse;
 import model.Vehicle;
 import model.VehicleStatus;
 import model.VehicleType;
@@ -15,20 +18,35 @@ import java.util.List;
 
 // TODO: prepared statement
 
-public class Query {
+public class Query implements Database {
 
     // Database URL
-    public static final String DB_URL = "jdbc:postgresql://34.94.14.233:5432/postgres";
+    private static final String DB_URL = "jdbc:postgresql://34.94.14.233:5432/postgres";
 
     //  Database credentials
-    public static final String USER = "postgres";
-    public static final String PASS = "hunter2";
+    private static final String USER = "postgres";
+    private static final String PASS = "hunter2";
 
-    public static Connection conn;
-    public static PreparedStatement stmt;
+    private static Connection conn;
+
+    private static final Query QUERY_INSTANCE = new Query();
+
+    private Query() {
+        try {
+            Class.forName("org.postgresql.Driver");
+            //System.out.println("Connecting to database...");
+            conn = DriverManager.getConnection(DB_URL, USER, PASS);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Query getInstance() {
+        return QUERY_INSTANCE;
+    }
 
 
-    private static ResultSet askQuery(String query) {
+    private ResultSet askQuery(PreparedStatement stmt, String query) {
         try {
             return stmt.executeQuery(query);
         } catch (Exception e) {
@@ -37,14 +55,11 @@ public class Query {
         return null;
     }
 
-    /**
-     * Method for querying for all available vehicles
-     *
-     * @return All the available vehicles found
-     */
-    private List<Vehicle> getAllAvailableVehicles(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
-        List<Vehicle> returnList = new ArrayList<>();
 
+    @Override
+    public DatabaseResponse<List<Vehicle>> getVehicles(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+        boolean success = true;
+        List<Vehicle> returnList = new ArrayList<>();
         String query = "SELECT v.* \n" +
                 "FROM public.vehicle v, public.rent r\n" +
                 "WHERE v.status = \'for_rent\' and  r.vid = v.vid";
@@ -54,11 +69,6 @@ public class Query {
         }
         if (location != null && !location.equals("")) {
             query += " and v.location = ?";// + location;
-            try {
-                stmt.setString(1, location);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
 
         // logic for date and time
@@ -79,35 +89,55 @@ public class Query {
             query += " and ((not r.fromDate <= " + toDate.toString() + ") or r.fromTime <= " + toTime.toString() + ")";
         }
 
-        // type, location, fromTime, toTime, fromDate, toDate
-
-        //TODO - uncomment
         try {
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, location);
-            //stmt.executeUpdate();
-            ResultSet rs = askQuery(query);
+            PreparedStatement stmt = conn.prepareStatement(query);
+            if (query.contains("?")) {
+                stmt.setString(1, location);
+            }
+            ResultSet rs = askQuery(stmt, query);
             assert (rs != null);
-            while (rs != null && rs.next()) {
-                Date date = rs.getDate("");
-//                VehicleStatus status = VehicleStatus.toStatus(rs.getString("status").toUpperCase());
-//                VehicleType type1 = (VehicleType) rs.getObject("vtname");
-//                Vehicle vehicle = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
-//                        rs.getString("make"), rs.getString("model"),
-//                        rs.getString("year"), rs.getString("color"),
-//                        rs.getInt("odomoter"), status, type1);
-                //returnList.add(vehicle);
+            while (rs.next()) {
+                VehicleStatus status = VehicleStatus.toStatus(rs.getString("status"));
+                VehicleTypeName vehicleTypeName = VehicleTypeName.toVechicleTypeName(rs.getString("vtname"));
+                Vehicle vehicle = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
+                        rs.getString("make"), rs.getString("model"),
+                        rs.getString("year"), rs.getString("color"),
+                        rs.getInt("odomoter"), status, null, vehicleTypeName);
+                returnList.add(vehicle);
             }
             rs.close();
             stmt.close();
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            success = false;
         }
 
-        //askQuery(query);
-        return returnList;
+        return new TestDatabaseResponse<>(query, success, null, returnList);
+
     }
 
+    @Override
+    public DatabaseResponse<String> generateDailyRentalReport() {
+        return null;
+    }
 
+    @Override
+    public DatabaseResponse<String> generateDailyBranchRentalReport(String branch) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<String> generateDailyReturnReport() {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<String> generateDailyBranchReturnReport(String branch) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<?> sendQuery(String query) {
+        return null;
+    }
 }

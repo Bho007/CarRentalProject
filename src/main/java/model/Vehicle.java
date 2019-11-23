@@ -1,13 +1,5 @@
 package model;
 
-<<<<<<< HEAD
-import java.util.ArrayList;
-import java.util.List;
-
-public class Vehicle
-{
-    public Vehicle(int vid, String vLicense, String make, String model, String year, String color, int odometer, VehicleStatus status, VehicleType vtName) {
-=======
 public class Vehicle {
     private int vid;
     private String vLicense;
@@ -21,7 +13,6 @@ public class Vehicle {
     private VehicleTypeName vehicleTypeName;
     
     public Vehicle(int vid, String vLicense, String make, String model, String year, String color, int odometer, VehicleStatus status, VehicleType vtName, VehicleTypeName vehicleTypeName) {
->>>>>>> e3504e02ab30808f2e1835fa638366117272046b
         this.vid = vid;
         this.vLicense = vLicense;
         this.make = make;

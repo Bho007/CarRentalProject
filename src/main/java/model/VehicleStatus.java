@@ -7,14 +7,14 @@ public enum VehicleStatus {
     RENTED;
 
     public static VehicleStatus toStatus(String input) {
-        switch(input.toUpperCase()) {
-            case "FOR_RENT":
+        switch (input.toLowerCase()) {
+            case "for_rent":
                 return FOR_RENT;
-            case "FOR_SALE":
+            case "for_sale":
                 return FOR_SALE;
-            case "MAINTENANCE":
+            case "maintenance":
                 return MAINTENANCE;
-            case "RENTED":
+            case "rented":
                 return RENTED;
             default:
                 return null;
