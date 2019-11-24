@@ -21,7 +21,7 @@ public enum VehicleTypeName {
         return name;
     }
 
-    public static VehicleTypeName toVechicleTypeName(String input) {
+    public static VehicleTypeName toVehicleTypeName(String input) {
         switch (input.toLowerCase()) {
             case "economy":
                 return ECONOMY;

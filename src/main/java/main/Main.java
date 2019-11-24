@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import jdbc.Query;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,7 +33,7 @@ public class Main extends Application {
         }
         
         // TODO replace
-        database = new TestDatabase();
+        database = Query.getInstance();
         launch();
     }
     
