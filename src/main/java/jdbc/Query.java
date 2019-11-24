@@ -269,6 +269,34 @@ public class Query implements Database {
     }
 
     @Override
+    public DatabaseResponse<Boolean> customerExists(Long phone) {
+        String response = SUCCESS;
+        boolean success = true;
+        boolean ret = false;
+        String query = "SELECT c.cellphone\n" +
+                "FROM public.customer c\n" +
+                "WHERE c.cellphone = ?";
+        try {
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setLong(1, phone);
+            query = stmt.toString();
+            ResultSet resultSet = stmt.executeQuery();
+            ret = resultSet.next();
+            resultSet.close();
+            stmt.close();
+        } catch (SQLException e) {
+            if (e.getSQLState().equals("23505")) {
+                response = "already exists";
+                success = true;
+            } else {
+                response = ERROR;
+                success = false;
+            }
+        }
+        return new BooleanResponse(query, success, response, ret);
+    }
+
+    @Override
     public DatabaseResponse<Boolean> customerExists(String driversLicense) {
         String response = SUCCESS;
         boolean success = true;

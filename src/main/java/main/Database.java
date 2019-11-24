@@ -21,6 +21,7 @@ public interface Database {
     DatabaseResponse<Boolean> branchExists(String location, String city);
 
     DatabaseResponse<Boolean> customerExists(String driversLicense);
+    DatabaseResponse<Boolean> customerExists(Long phone);
     DatabaseResponse<Customer> getCustomer(String driversLicense);
 
     // return anything (default to empty string?) - if customer cannot be added, set success == false
