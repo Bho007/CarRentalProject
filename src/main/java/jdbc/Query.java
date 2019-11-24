@@ -610,7 +610,53 @@ public class Query implements Database {
 
     @Override
     public DatabaseResponse<?> sendQuery(String query) {
-        return null;
+        try {
+            PreparedStatement stmt = conn.prepareStatement(query);
+            Object ret = stmt.executeQuery();
+            return new DatabaseResponse<>() {
+                @Override
+                public String getQuery() {
+                    return query;
+                }
+
+                @Override
+                public boolean isSuccess() {
+                    return true;
+                }
+
+                @Override
+                public String getResponse() {
+                    return SUCCESS;
+                }
+
+                @Override
+                public Object getValue() {
+                    return ret;
+                }
+            };
+        } catch (SQLException e) {
+            return new DatabaseResponse<>() {
+                @Override
+                public String getQuery() {
+                    return query;
+                }
+
+                @Override
+                public boolean isSuccess() {
+                    return false;
+                }
+
+                @Override
+                public String getResponse() {
+                    return ERROR;
+                }
+
+                @Override
+                public Object getValue() {
+                    return null;
+                }
+            };
+        }
     }
 
     private IntegerResponse getAllRates(VehicleTypeName type, String rateVar) {
