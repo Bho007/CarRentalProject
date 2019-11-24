@@ -275,7 +275,9 @@ public class UIController {
     @FXML
     HBox generateReportTypeBranchBox;
     @FXML
-    TextField generateReportTypeBranchTextField;
+    TextField generateReportTypeLocationTextField;
+    @FXML
+    TextField generateReportTypeCityTextField;
     @FXML
     Button generateReportButton;
     @FXML
@@ -721,7 +723,7 @@ public class UIController {
             // TODO get payment information
             // TODO generate confirmation number
             // TODO move to payment
-            confirmationNumberLabel.setText("TODO");
+            // confirmationNumberLabel.setText("TODO");
             confirmationCustomerNameLabel.setText(name);
             confirmationDriversLicenseLabel.setText(driversLicense);
             confirmationVehicleTypeLabel.setText(vehicleTypeName);
@@ -797,7 +799,7 @@ public class UIController {
             //     return;
             // } else {
             
-            if (rentVehicleNewCustomerRadioButton.isSelected()) { 
+            if (rentVehicleNewCustomerRadioButton.isSelected()) {
                 DatabaseResponse<Reservation> reservation = Main.database.reserveVehicle(driversLicense, phone, vehicleTypeName == null ? null : VehicleTypeName.valueOf(vehicleTypeName), location, fromDateTime, endDateTime);
                 logResponse(reservation);
                 
@@ -835,7 +837,8 @@ public class UIController {
         } else if (isReturn) {
             computeCost();
             
-            if (vehicleTypeName.equalsIgnoreCase("Any")) {
+            // TODO
+            if (vehicleTypeName == null || vehicleTypeName.equalsIgnoreCase("Any")) {
                 paymentInformationErrorLabel.setVisible(true);
                 paymentInformationErrorLabel.setText("Invalid internal state - please start over.");
                 return;
@@ -914,12 +917,14 @@ public class UIController {
                 name = reservation.getCustomer().getName();
                 address = reservation.getCustomer().getAddress();
                 driversLicense = reservation.getCustomer().getDlicense();
+                vehicleTypeName = reservation.getVtName().getName();
             } else if (getReservationFromPhone.isSuccess()) {
                 reservation = getReservationFromPhone.getValue();
                 phone = String.valueOf(reservation.getCustomer().getCellPhone());
                 name = reservation.getCustomer().getName();
                 address = reservation.getCustomer().getAddress();
                 driversLicense = reservation.getCustomer().getDlicense();
+                vehicleTypeName = reservation.getVtName().getName();
             } else {
                 rentVehicleInitialErrorLabel.setVisible(true);
                 rentVehicleInitialErrorLabel.setText("Unknown reservation or phone number");
@@ -974,6 +979,9 @@ public class UIController {
     @FXML
     public void showReturnVehiclePane(ActionEvent actionEvent) {
         makeAllPanesInvisible();
+        returnVehiclePeriodComboBox.getItems().add("am");
+        returnVehiclePeriodComboBox.getSelectionModel().selectFirst();
+        returnVehiclePeriodComboBox.getItems().add("pm");
         returnVehicleStatusPane.setVisible(true);
         setReturn(true);
     }
@@ -1001,6 +1009,7 @@ public class UIController {
     
     @FXML
     public void processReturn(ActionEvent actionEvent) {
+        setReturn(true);
         returnVehicleStatusErrorLabel.setVisible(false);
         
         if (returnVehicleStatusRentalIDTextField.getText().isBlank()) {
@@ -1044,15 +1053,24 @@ public class UIController {
         rentalEndHour = returnVehicleEndHourTextField.getText();
         rentalEndMinute = returnVehicleEndMinuteTextField.getText();
         rentalEndPeriod = returnVehiclePeriodComboBox.getSelectionModel().getSelectedItem();
+
         
         int hour = Integer.parseInt(rentalEndHour) % 12;
-        hour = hour + (startTimePeriod.equals("am") ? 0 : 12);
+        hour = hour + (rentalEndPeriod.equals("am") ? 0 : 12);
         hour = hour % 24;
         int minute = Integer.parseInt(rentalEndMinute);
         
         rentalEndDateTime = returnVehicleRentalEndDatePicker.getValue().atTime(hour, minute);
         DatabaseResponse<Rental> rental = Main.database.getRental(rentalID);
         logResponse(rental);
+    
+        // TODO set user information from rental info
+        phone = String.valueOf(rental.getValue().getCustomer().getCellPhone());
+        name = rental.getValue().getCustomer().getName();
+        address = rental.getValue().getCustomer().getAddress();
+        driversLicense = rental.getValue().getCustomer().getDlicense();
+        vehicleTypeName = rental.getValue().getReservation().getVtName().getName();
+        
         
         if (rental.isSuccess()) {
             if (rentalEndDateTime.isBefore(
@@ -1068,6 +1086,8 @@ public class UIController {
                 rentalStartHour = String.valueOf(rentalStartDateTime.getHour() % 12);
                 rentalStartMinute = String.valueOf(rentalStartDateTime.getMinute());
                 rentalStartPeriod = rentalStartDateTime.getHour() >= 12 ? "am" : "pm";
+                
+                // vehicleTypeName = rental.getValue().getVid()
                 
                 computeCost();
                 
@@ -1087,10 +1107,13 @@ public class UIController {
             return;
         }
         
-        // TODO
-        // get details for rental
-        // check if rental exists
-        // check that return time is after rental time
+        // TODO set confirmation for return
+        computeCost();
+        confirmationNumberLabel.setText(String.valueOf(rental.getValue().getRid()));
+        confirmationCustomerNameLabel.setText(name);
+        confirmationDriversLicenseLabel.setText(driversLicense);
+        confirmationVehicleTypeLabel.setText(vehicleTypeName);
+        confirmationLocationLabel.setText(location);
         
         makeAllPanesInvisible();
         paymentInformationPane.setVisible(true);
@@ -1129,13 +1152,19 @@ public class UIController {
         DatabaseResponse<String> response;
         
         if (generateReportTypeBranchBox.isVisible()) {
-            if (generateReportTypeBranchTextField.getText().isBlank()) {
+            if (generateReportTypeLocationTextField.getText().isBlank()) {
+                generateReportErrorLabel.setVisible(true);
+                generateReportErrorLabel.setText("Invalid Branch");
+                return;
+            }
+    
+            if (generateReportTypeCityTextField.getText().isBlank()) {
                 generateReportErrorLabel.setVisible(true);
                 generateReportErrorLabel.setText("Invalid Branch");
                 return;
             }
             
-            DatabaseResponse<Boolean> branchExists = Main.database.locationExists(generateReportTypeBranchTextField.getText());
+            DatabaseResponse<Boolean> branchExists = Main.database.branchExists(generateReportTypeLocationTextField.getText(), generateReportTypeCityTextField.getText());
             logResponse(branchExists);
             if (!branchExists.isSuccess()) {
                 generateReportErrorLabel.setVisible(true);
@@ -1145,10 +1174,10 @@ public class UIController {
             
             generateReportErrorLabel.setVisible(false);
             if (generateReportTypeComboBox.getValue().contains("Rentals")) {
-                response = Main.database.generateDailyBranchRentalReport(generateReportTypeBranchTextField.getText());
+                response = Main.database.generateDailyBranchRentalReport(generateReportTypeLocationTextField.getText(), generateReportTypeCityTextField.getText());
                 logResponse(response);
             } else {
-                response = Main.database.generateDailyBranchReturnReport(generateReportTypeBranchTextField.getText());
+                response = Main.database.generateDailyBranchReturnReport(generateReportTypeLocationTextField.getText(), generateReportTypeCityTextField.getText());
                 logResponse(response);
             }
         } else {
@@ -1266,7 +1295,7 @@ public class UIController {
         long hours = start.until(end, ChronoUnit.HOURS) - weeks * 7 * 24 - days * 24 + 1;
         
         // get rates from database
-        if (!vehicleTypeName.equalsIgnoreCase("Any")) {
+        if (vehicleTypeName != null && !vehicleTypeName.equalsIgnoreCase("Any")) {
             DatabaseResponse<Integer> hourlyRateResponse = Main.database.getHourlyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));
             logResponse(hourlyRateResponse);
             DatabaseResponse<Integer> dailyRateResponse = Main.database.getDailyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));

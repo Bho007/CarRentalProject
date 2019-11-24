@@ -833,7 +833,7 @@
                   </VBox>
                </children>
             </AnchorPane>
-            <AnchorPane fx:id="generateReportPane" layoutX="10.0" layoutY="10.0" visible="false">
+            <AnchorPane fx:id="generateReportPane" layoutX="10.0" layoutY="10.0">
                <children>
                   <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
                      <children>
@@ -864,10 +864,12 @@
                                                 <ComboBox fx:id="generateReportTypeComboBox" prefWidth="150.0" />
                                              </children>
                                           </HBox>
-                                          <HBox fx:id="generateReportTypeBranchBox" alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0" visible="false">
+                                          <HBox fx:id="generateReportTypeBranchBox" alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
                                              <children>
-                                                <Label text="Branch" />
-                                                <TextField fx:id="generateReportTypeBranchTextField" />
+                                                <Label text="Location" />
+                                                <TextField fx:id="generateReportTypeLocationTextField" prefHeight="25.0" prefWidth="100.0" />
+                                                <Label layoutX="10.0" layoutY="14.0" text="City" />
+                                                <TextField fx:id="generateReportTypeCityTextField" prefHeight="25.0" prefWidth="100.0" />
                                              </children>
                                           </HBox>
                                           <HBox alignment="CENTER_LEFT" spacing="5.0">

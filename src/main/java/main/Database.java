@@ -9,13 +9,17 @@ public interface Database {
     // parameters can be null
     DatabaseResponse<List<Vehicle>> getVehicles(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to);
     
+    DatabaseResponse<Vehicle> getVehicle(String rentalID);
+    
     // return human readable string
     DatabaseResponse<String> generateDailyRentalReport();
-    DatabaseResponse<String> generateDailyBranchRentalReport(String branch);
+    DatabaseResponse<String> generateDailyBranchRentalReport(String location, String city);
     DatabaseResponse<String> generateDailyReturnReport();
-    DatabaseResponse<String> generateDailyBranchReturnReport(String branch);
+    DatabaseResponse<String> generateDailyBranchReturnReport(String location, String city);
     
     DatabaseResponse<Boolean> locationExists(String location);
+    DatabaseResponse<Boolean> branchExists(String location, String city);
+    
     DatabaseResponse<Boolean> customerExists(String driversLicense);
     DatabaseResponse<Customer> getCustomer(String driversLicense);
     

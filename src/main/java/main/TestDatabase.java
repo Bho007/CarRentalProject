@@ -2,6 +2,8 @@ package main;
 
 import model.*;
 
+import java.sql.Date;
+import java.sql.Time;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -123,14 +125,21 @@ public class TestDatabase implements Database {
     }
     
     @Override
+    public DatabaseResponse<Vehicle> getVehicle(String rentalID) {
+        return new TestDatabaseResponse<>("get singular vehicle", true, "vehicle value",
+                new Vehicle(ThreadLocalRandom.current().nextInt(2, 100000), "L" + ThreadLocalRandom.current().nextInt(2, 100000), "M" + ThreadLocalRandom.current().nextInt(2, 100000), "M_" + ThreadLocalRandom.current().nextInt(2, 20), ThreadLocalRandom.current().nextInt(1990, 2050) + "", "red", ThreadLocalRandom.current().nextInt(2, 100000), VehicleStatus.FOR_RENT, null, VehicleTypeName.FULLSIZE));
+    }
+    
+    @Override
     public DatabaseResponse<String> generateDailyRentalReport() {
         return null;
     }
     
     @Override
-    public DatabaseResponse<String> generateDailyBranchRentalReport(String branch) {
+    public DatabaseResponse<String> generateDailyBranchRentalReport(String location, String city) {
         return null;
     }
+    
     
     @Override
     public DatabaseResponse<String> generateDailyReturnReport() {
@@ -138,13 +147,18 @@ public class TestDatabase implements Database {
     }
     
     @Override
-    public DatabaseResponse<String> generateDailyBranchReturnReport(String branch) {
+    public DatabaseResponse<String> generateDailyBranchReturnReport(String location, String city) {
         return null;
     }
     
     @Override
     public DatabaseResponse<Boolean> locationExists(String location) {
         return new TestDatabaseResponse<>("query location", true, "found location", true);
+    }
+    
+    @Override
+    public DatabaseResponse<Boolean> branchExists(String location, String city) {
+        return null;
     }
     
     @Override
@@ -185,7 +199,7 @@ public class TestDatabase implements Database {
     
     @Override
     public DatabaseResponse<Rental> getRental(String id) {
-        return new TestDatabaseResponse<>("make rental query", true, "reservation rental number", new Rental(ThreadLocalRandom.current().nextInt(100000, 200000), ThreadLocalRandom.current().nextInt(100000, 200000), null, null, 2, "card", "123", null));
+        return new TestDatabaseResponse<>("make rental query", true, "reservation rental number", new Rental(ThreadLocalRandom.current().nextInt(100000, 200000), ThreadLocalRandom.current().nextInt(100000, 200000), new Customer(123, "test customer", "test address", "test license"), new TimePeriod(new Date(123232323), new Time(23242323), new Date(123232323 * 2), new Time(23242323 * 2)), 2, "card", "123", new Date(123123)));
     }
     
     @Override
