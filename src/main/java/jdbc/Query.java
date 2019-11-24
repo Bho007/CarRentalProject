@@ -153,9 +153,10 @@ public class Query implements Database {
     }
 
     @Override
-    public DatabaseResponse<String> reserveVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+    public DatabaseResponse<Reservation> reserveVehicle(String driversLicense, String phoneNumber, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
         return null;
     }
+
 
     @Override
     public DatabaseResponse<Reservation> getReservationByConfirmationNumber(String confirmationNumber) {
@@ -168,9 +169,10 @@ public class Query implements Database {
     }
 
     @Override
-    public DatabaseResponse<String> rentVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+    public DatabaseResponse<Rental> rentVehicle(String driversLicense, String phone, String confirmationNumber, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to, String creditCardNumber, String expiryMonth, String expiryYear, String creditCardType) {
         return null;
     }
+
 
     @Override
     public DatabaseResponse<Rental> getRental(String id) {
@@ -178,7 +180,7 @@ public class Query implements Database {
     }
 
     @Override
-    public DatabaseResponse<String> returnVehicle(VehicleTypeName type, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost) {
+    public DatabaseResponse<String> returnVehicle(String rentalID, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost) {
         return null;
     }
 
