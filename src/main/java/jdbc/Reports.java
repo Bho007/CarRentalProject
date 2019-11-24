@@ -20,11 +20,116 @@ public class Reports {
     }
 
     public static DatabaseResponse<String> getDailyReturns(Branch b) {
-        boolean success = false;
+
+        ReturnReport report = new ReturnReport();
+
+        String vehicleQuery = "SELECT * FROM Vehicle v INNER JOIN Rent r ON v.vlicense = r.vlicense INNER JOIN Return rt ON r.rid = rt.rid" +
+                " WHERE fromdate = ? " +
+                ((b == null) ? "" : "AND v.location = ? AND v.city = ? ") + "ORDER BY (location, city), vtname ASC";
+        String vtGroupQuery = "SELECT SUM(value) AS revenue, COUNT(*) AS total, vtname FROM (" + vehicleQuery + ") vehicles GROUP BY vtname";
+        String branchGroupQuery = "SELECT SUM(value) AS revenue, COUNT(*) AS total, location, city FROM (" + vehicleQuery + ") vehicles GROUP BY (location, city)";
+
+        String vehQueryStringPost = "";
+        String vtGroupQueryStringPost = "";
+        String branchGroupQueryStringPost = "";
+
+        try {
+            conn = DriverManager.getConnection(DB_URL, USER, PASS);
+            stmt = conn.prepareStatement(vehicleQuery);
+
+            stmt.setDate(1, TODAY);
+            if (b != null) {
+                stmt.setString(2, b.getLocation());
+                stmt.setString(3, b.getCity());
+            }
+
+            vehQueryStringPost = stmt.toString();
+
+            ResultSet vehicleRs = stmt.executeQuery();
+
+            while (vehicleRs.next()) {
+                int vid = vehicleRs.getInt("vid");
+                String vLicense = vehicleRs.getString("vlicense");
+                String make = vehicleRs.getString("make");
+                String model = vehicleRs.getString("model");
+                Integer yearInt = vehicleRs.getInt("year");
+                String year = yearInt.toString();
+                String color = vehicleRs.getString("color");
+                int odometer = vehicleRs.getInt("odometer");
+
+                VehicleStatus vehicleStatus = VehicleStatus.toStatus(vehicleRs.getString("status"));
+                VehicleTypeName vtName = VehicleTypeName.toVehicleTypeName(vehicleRs.getString("vtname"));
+
+                Vehicle v = new Vehicle(vid, vLicense, make, model, year, color, odometer, vehicleStatus, null, vtName);
+
+                report.addVehicle(v);
+            }
+            vehicleRs.close();
+
+            stmt = conn.prepareStatement(vtGroupQuery);
+            stmt.setDate(1, TODAY);
+            if (b != null) {
+                stmt.setString(2, b.getLocation());
+                stmt.setString(3, b.getCity());
+            }
+
+            vtGroupQueryStringPost = stmt.toString();
+
+            ResultSet vtRs = stmt.executeQuery();
+
+            while (vtRs.next()) {
+                VehicleTypeName vtName = VehicleTypeName.toVehicleTypeName(vtRs.getString("vtname"));
+                int count = vtRs.getInt("total");
+                int revenue = vtRs.getInt("revenue");
+
+                report.addVTReturn(vtName, revenue, count);
+            }
+
+            vtRs.close();
+
+            stmt = conn.prepareStatement(branchGroupQuery);
+            stmt.setDate(1, TODAY);
+            if (b != null) {
+                stmt.setString(2, b.getLocation());
+                stmt.setString(3, b.getCity());
+            }
+
+            branchGroupQueryStringPost = stmt.toString();
+
+            ResultSet branchRs = stmt.executeQuery();
+
+            while (branchRs.next()) {
+                String location = branchRs.getString("location");
+                String city = branchRs.getString("city");
+                Branch branch = new Branch(location, city);
+
+                int revenue = branchRs.getInt("revenue");
+                int total = branchRs.getInt("total");
+
+                report.addBranchReturn(branch, revenue, total);
+            }
+            branchRs.close();
+
+            stmt.close();
+
+        } catch (SQLException e) {
+            return new TestDatabaseResponse<>( vehQueryStringPost + "; \n" + vtGroupQueryStringPost + "; \n" + branchGroupQueryStringPost, false, e.getMessage(), "");
+        }
+
+        String queryStatement = vehQueryStringPost + "; \n" + vtGroupQueryStringPost + "; \n" + branchGroupQueryStringPost;
+
+        return new TestDatabaseResponse<>(queryStatement, true, null, report.toString());
+    }
+
+    public static DatabaseResponse<String> getDailyRentals() {
+        return getDailyRentals(null);
+    }
+
+    public static DatabaseResponse<String> getDailyRentals(Branch b) {
         RentalReport report = new RentalReport();
 
         String vehicleQuery = "SELECT * FROM Vehicle v INNER JOIN Rent r ON v.vlicense = r.vlicense WHERE fromdate = ? " +
-                ((b == null) ? "" : "AND v.location = ? AND v.city = ? ") + "ORDER BY vtname ASC";
+                ((b == null) ? "" : "AND v.location = ? AND v.city = ? ") + "ORDER BY (location, city), vtname ASC";
         String vtGroupQuery = "SELECT COUNT(*) AS total, vtname FROM (" + vehicleQuery + ") vehicles GROUP BY vtname";
         String branchGroupQuery = "SELECT COUNT(*) AS total, location, city FROM (" + vehicleQuery + ") vehicles GROUP BY (location, city)";
 
@@ -44,7 +149,7 @@ public class Reports {
 
             vehQueryStringPost = stmt.toString();
 
-            ResultSet vehicleRs = stmt.executeQuery(vehicleQuery);
+            ResultSet vehicleRs = stmt.executeQuery();
 
             while (vehicleRs.next()) {
                 int vid = vehicleRs.getInt("vid");
@@ -56,7 +161,7 @@ public class Reports {
                 String color = vehicleRs.getString("color");
                 int odometer = vehicleRs.getInt("odometer");
 
-                VehicleStatus vehicleStatus = VehicleStatus.toStatus(vehicleRs.getString("vehicleStatus"));
+                VehicleStatus vehicleStatus = VehicleStatus.toStatus(vehicleRs.getString("status"));
                 VehicleTypeName vtName = VehicleTypeName.toVehicleTypeName(vehicleRs.getString("vtname"));
 
                 Vehicle v = new Vehicle(vid, vLicense, make, model, year, color, odometer, vehicleStatus, null, vtName);
@@ -117,14 +222,6 @@ public class Reports {
 
         return new TestDatabaseResponse<>(queryStatement, true, null, report.toString());
     }
-
-    public static DatabaseResponse<String> getDailyRentals() {
-        return getDailyRentals(null);
-    }
-
-    public static DatabaseResponse<String> getDailyRentals(Branch b) {
-        return null;
-    }
 }
 
 class RentalReport {
@@ -135,6 +232,7 @@ class RentalReport {
     RentalReport() {
         this.vehicles = new ArrayList<>();
         this.branchRentals = new HashMap<>();
+        this.vtRentals = new HashMap<>();
     }
 
     public void addVehicle(Vehicle v) {
@@ -146,11 +244,102 @@ class RentalReport {
     }
 
     public void addVTRentalCount(VehicleTypeName vt, int count) {
-
+        vtRentals.put(vt, count);
     }
 
+    @Override
+    public String toString() {
+
+        if (vehicles.size() == 0) {
+            return "No vehicles rented today";
+        }
+
+        String str = "VEHICLES RENTED OUT TODAY: \n";
+
+        for (Vehicle v: vehicles) {
+            str += v.toString() + "\n";
+        }
+
+        str += "VEHICLES RENTED OUT BY TYPE: \n";
+        int total = 0;
+        for (VehicleTypeName vtname: vtRentals.keySet()) {
+            str += vtname + ": " + vtRentals.get(vtname) + "\n";
+            total += vtRentals.get(vtname);
+        }
+
+        str += "VEHICLES RENTED OUT BY BRANCH: \n";
+
+        for (Branch b: branchRentals.keySet()) {
+            str += b.toString() + ": " + branchRentals.get(b);
+        }
+
+        System.out.println("TOTAL NEW RENTALS TODAY: " + total);
+
+        return str;
+    }
 }
 
 class ReturnReport {
+    List<Vehicle> vehicles;
+    Map<Branch, List<Integer>> branchReturns;
+    Map<VehicleTypeName, List<Integer>> vtReturns;
 
+    ReturnReport() {
+        vehicles = new ArrayList<>();
+        branchReturns = new HashMap<>();
+        vtReturns = new HashMap<>();
+    }
+
+    public String toString() {
+
+        if (vehicles.size() == 0) {
+            return "No vehicles returned today";
+        }
+        String str = "VEHICLES RETURNED TODAY: ";
+
+        for (Vehicle v: vehicles) {
+            str += v.toString() + "\n";
+        }
+
+        str += "VEHICLES RETURNED AND REVENUE BY TYPE: \n";
+        int totalReturned = 0;
+        int totalRevenue = 0;
+
+        for (VehicleTypeName vtname: vtReturns.keySet()) {
+            str += vtname + ": Returned: " + vtReturns.get(vtname).get(1) +  " Revenue: $" + vtReturns.get(vtname).get(0)
+        + "\n";
+            totalReturned += vtReturns.get(vtname).get(1);
+            totalRevenue += vtReturns.get(vtname).get(0);
+        }
+
+        str += "VEHICLES RETURNED AND REVENUE BY BRANCH: \n";
+
+        for (Branch b: branchReturns.keySet()) {
+            str += b.toString() + ": Returned: " + vtReturns.get(b).get(1) +  " Revenue: $" + vtReturns.get(b).get(0)
+                    + "\n";
+        }
+
+        System.out.println("TOTAL RETURNS TODAY: " + totalReturned + "\n");
+        System.out.println("TOTAL REVENUE TODAY: $" + totalRevenue);
+
+        return str;
+    }
+
+    public void addVehicle(Vehicle v) {
+        vehicles.add(v);
+    }
+
+    public void addBranchReturn(Branch b, int revenue, int count) {
+        List<Integer> list = new ArrayList<>();
+        list.add(revenue);
+        list.add(count);
+        branchReturns.put(b, list);
+    }
+
+    public void addVTReturn(VehicleTypeName vt, int revenue, int count) {
+        List<Integer> list = new ArrayList<>();
+        list.add(revenue);
+        list.add(count);
+        vtReturns.put(vt, list);
+    }
 }

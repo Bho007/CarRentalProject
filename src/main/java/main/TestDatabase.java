@@ -1,4 +1,4 @@
-package main;
+/**package main;
 
 import model.*;
 
@@ -293,3 +293,4 @@ public class TestDatabase implements Database {
         return new TestDatabaseResponse<>("get weekly rate", true, "weekly rate response", 100);
     }
 }
+**/

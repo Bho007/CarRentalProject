@@ -4,7 +4,6 @@ package jdbc;
 
 import main.Database;
 import main.DatabaseResponse;
-import main.TestDatabaseResponse;
 import model.*;
 
 import java.sql.*;
@@ -15,11 +14,11 @@ import java.util.List;
 public class Query implements Database {
 
     // Database URL
-    private static final String DB_URL = "jdbc:postgresql://34.94.14.233:5432/postgres";
+    public static final String DB_URL = "jdbc:postgresql://34.94.14.233:5432/postgres";
 
     //  Database credentials
-    private static final String USER = "postgres";
-    private static final String PASS = "hunter2";
+    public static final String USER = "postgres";
+    public static final String PASS = "hunter2";
 
     private static final String ERROR = "Unable to retrieve the requested info";
     private static final String SUCCESS = "Success";
@@ -101,7 +100,7 @@ public class Query implements Database {
                 assert (rs != null);
                 while (rs.next()) {
                     VehicleStatus status = VehicleStatus.toStatus(rs.getString("status"));
-                    VehicleTypeName vehicleTypeName = VehicleTypeName.toVechicleTypeName(rs.getString("vtname"));
+                    VehicleTypeName vehicleTypeName = VehicleTypeName.toVehicleTypeName(rs.getString("vtname"));
                     Vehicle vehicle = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
                             rs.getString("make"), rs.getString("model"),
                             rs.getString("year"), rs.getString("color"),
@@ -121,14 +120,24 @@ public class Query implements Database {
 
     @Override
     public DatabaseResponse<String> generateDailyRentalReport() {
-        return null;
+        return Reports.getDailyRentals();
     }
 
     @Override
-    public DatabaseResponse<String> generateDailyReturnReport() {
-        return null;
+    public DatabaseResponse<String> generateDailyBranchRentalReport(Branch branch) {
+        return Reports.getDailyRentals(branch);
     }
 
+
+    @Override
+    public DatabaseResponse<String> generateDailyReturnReport() {
+        return Reports.getDailyReturns();
+    }
+
+    @Override
+    public DatabaseResponse<String> generateDailyBranchReturnReport(Branch branch) {
+        return Reports.getDailyReturns(branch);
+    }
 
     @Override
     public DatabaseResponse<Boolean> locationExists(String location) {
@@ -148,6 +157,11 @@ public class Query implements Database {
             ret = false;
         }
         return new BooleanResponse(query, ret, getResponse(ret), ret);
+    }
+
+    @Override
+    public DatabaseResponse<Boolean> branchExists(String location, String city) {
+        return null;
     }
 
     @Override
@@ -278,27 +292,10 @@ public class Query implements Database {
     }
 
     @Override
-    public DatabaseResponse<String> reserveVehicle(VehicleTypeName type, String dlicense, LocalDateTime from, LocalDateTime to) {
-        boolean success = customerExists(dlicense).getValue();
-        String query = "insert into public.reservation (vtname, cellphone, fromdate, fromtime, todate, totime) values (?,?,?,?,?,?)";
-        if (success) {
-            try {
-                PreparedStatement stmt = conn.prepareStatement(query);
-                stmt.setString(1, type.getName());
-                stmt.setString(2, dlicense);
-                stmt.setDate(3, Date.valueOf(from.toLocalDate()));
-                stmt.setTime(4, Time.valueOf(from.toLocalTime()));
-                stmt.setDate(5, Date.valueOf(to.toLocalDate()));
-                stmt.setTime(6, Time.valueOf(to.toLocalTime()));
-                success = stmt.executeUpdate() > 0;
-                stmt.close();
-                return new StringResponse(query, success, getResponse(success), getReservationNumber(type, dlicense, from, to));
-            } catch (SQLException e) {
-                //
-            }
-        }
-        return new StringResponse(query, false, ERROR, null);
+    public DatabaseResponse<Reservation> reserveVehicle(String driversLicense, String phoneNumber, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+        return null;
     }
+
 
     private String getReservationNumber(VehicleTypeName type, String dlicense, LocalDateTime from, LocalDateTime to) {
         String confno = "";
@@ -351,7 +348,7 @@ public class Query implements Database {
                 LocalDateTime from = LocalDateTime.parse(fromDate.toString() + fromTime.toString());
                 LocalDateTime to = LocalDateTime.parse(toDate.toString() + toTime.toString());
                 res = new Reservation(rs.getInt("confno"),
-                        VehicleTypeName.toVechicleTypeName(rs.getString("vtname")),
+                        VehicleTypeName.toVehicleTypeName(rs.getString("vtname")),
                         rs.getLong("cellphone"), from, to);
                 counter++;
             }
@@ -383,7 +380,7 @@ public class Query implements Database {
                 LocalDateTime from = LocalDateTime.parse(fromDate.toString() + " " + fromTime.toString());
                 LocalDateTime to = LocalDateTime.parse(toDate.toString() + " " + toTime.toString());
                 res = new Reservation(rs.getInt("confno"),
-                        VehicleTypeName.toVechicleTypeName(rs.getString("vtname")),
+                        VehicleTypeName.toVehicleTypeName(rs.getString("vtname")),
                         rs.getLong("cellphone"), from, to);
                 counter++;
             }
@@ -537,12 +534,12 @@ public class Query implements Database {
 
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
-                stmt.setString(1, vlicense);
+            stmt.setString(1, vlicense);
             ResultSet rs = stmt.executeQuery();
             assert (rs != null);
             while (rs.next()) {
                 VehicleStatus status = VehicleStatus.toStatus(rs.getString("status"));
-                VehicleTypeName vehicleTypeName = VehicleTypeName.toVechicleTypeName(rs.getString("vtname"));
+                VehicleTypeName vehicleTypeName = VehicleTypeName.toVehicleTypeName(rs.getString("vtname"));
                 Vehicle returnV = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
                         rs.getString("make"), rs.getString("model"),
                         rs.getString("year"), rs.getString("color"),

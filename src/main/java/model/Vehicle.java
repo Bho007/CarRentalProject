@@ -40,7 +40,21 @@ public class Vehicle {
     public String getModel() {
         return model;
     }
-    
+
+    @Override
+    public String toString() {
+        return "Vehicle ID: " + vid +
+                ", License Plate #:'" + vLicense + '\'' +
+                ", Make:" + make + '\'' +
+                ", Model:" + model + '\'' +
+                ", Year: " + year + '\'' +
+                ", Color: '" + color + '\'' +
+                ", Odometer:" + odometer +
+                ", Status: " + status +
+                ", Vehicle Type: " + vehicleTypeName +
+                '}';
+    }
+
     public String getYear() {
         return year;
     }

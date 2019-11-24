@@ -129,9 +129,9 @@
                               <Insets bottom="10.0" left="10.0" right="10.0" />
                            </padding>
                         </HBox>
-                      <TitledPane fx:id="filterTitledPane" animated="false" text="Filter">
-                        <content>
-                          <AnchorPane fx:id="filterPane" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                        <TitledPane fx:id="filterTitledPane" animated="false" text="Filter">
+                           <content>
+                              <AnchorPane fx:id="filterPane" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                  <children>
                                     <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
                                        <children>
@@ -181,8 +181,8 @@
                                     </VBox>
                                  </children>
                               </AnchorPane>
-                        </content>
-                      </TitledPane>
+                           </content>
+                        </TitledPane>
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                            <children>
                               <Button fx:id="filterSearchButton" mnemonicParsing="false" onAction="#filterVehicles" text="Search" />
@@ -866,8 +866,10 @@
                                           </HBox>
                                           <HBox fx:id="generateReportTypeBranchBox" alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0" visible="false">
                                              <children>
-                                                <Label text="Branch" />
-                                                <TextField fx:id="generateReportTypeBranchTextField" />
+                                                <Label text="Location" />
+                                                <TextField fx:id="generateReportTypeLocationTextField" prefHeight="25.0" prefWidth="100.0" />
+                                                <Label layoutX="10.0" layoutY="14.0" text="City" />
+                                                <TextField fx:id="generateReportTypeCityTextField" prefHeight="25.0" prefWidth="100.0" />
                                              </children>
                                           </HBox>
                                           <HBox alignment="CENTER_LEFT" spacing="5.0">
@@ -944,13 +946,13 @@
                         <TitledPane fx:id="viewEditDatabaseResultTitledPane" expanded="false" text="Result">
                            <content>
                               <ScrollPane fx:id="viewEditDatabaseResultScrollPane" prefHeight="200.0" prefWidth="200.0" visible="false">
-                                <content>
-                                  <AnchorPane fx:id="viewEditDatabaseResultAnchorPane" minHeight="0.0" minWidth="0.0">
+                                 <content>
+                                    <AnchorPane fx:id="viewEditDatabaseResultAnchorPane" minHeight="0.0" minWidth="0.0">
                                        <children>
                                           <Text fx:id="viewEditDatabaseResultText" strokeType="OUTSIDE" strokeWidth="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                                        </children>
                                     </AnchorPane>
-                                </content>
+                                 </content>
                               </ScrollPane>
                            </content>
                         </TitledPane>

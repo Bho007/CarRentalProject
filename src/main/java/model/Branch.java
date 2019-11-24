@@ -42,4 +42,10 @@ public class Branch {
     public int hashCode() {
         return Objects.hash(location, city);
     }
+
+    @Override
+    public String toString() {
+        String str = location + ", " + city;
+        return str;
+    }
 }
