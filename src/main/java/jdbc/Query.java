@@ -364,7 +364,7 @@ public class Query implements Database {
             ResultSet resultSet = stmt.executeQuery();
             int counter = 0;
             while (resultSet.next()) {
-                ret = new Customer(resultSet.getInt("cellphone"), resultSet.getString("name"),
+                ret = new Customer(resultSet.getLong("cellphone"), resultSet.getString("name"),
                         resultSet.getString("address"), resultSet.getString("dlicense"));
                 counter++;
             }
@@ -587,8 +587,9 @@ public class Query implements Database {
                         getReservationByPhoneNumber(phone).getValue(), null);
                 stmt.close();
                 if (!updateVehicleStatus(tobeRented, VehicleStatus.RENTED)) {
+                    success = false;
                     response = "vehicle status update failed";
-                };
+                }
             } catch (SQLException e) {
                 success = false;
                 response = ERROR;
