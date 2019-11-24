@@ -153,33 +153,44 @@ public class TestDatabase implements Database {
     }
     
     @Override
+    public DatabaseResponse<Customer> getCustomer(String driversLicense) {
+        return new TestDatabaseResponse<>("get customer", true, "found customer", 
+                new Customer(132232, "test customer", "test address", "123"));
+    }
+    
+    @Override
     public DatabaseResponse<?> addCustomer(String phone, String name, String address, String driversLicense) {
-        return new TestDatabaseResponse<>("add customer", true, "", "");
+        return new TestDatabaseResponse<>("add customer", true, "added customer", "");
     }
     
     @Override
-    public DatabaseResponse<String> reserveVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
-        return new TestDatabaseResponse<>("make reservation query", true, "reservation confirmation number", ThreadLocalRandom.current().nextInt(100000, 200000) + "");
+    public DatabaseResponse<Reservation> reserveVehicle(String driversLicense, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+        return new TestDatabaseResponse<>("make reservation query", true, "reservation confirmation number", new Reservation(ThreadLocalRandom.current().nextInt(100000, 200000), null, null, null, null, null, null));
     }
     
     @Override
-    public DatabaseResponse<Reservation> getReservation(String confirmationNumber) {
-        return null;
+    public DatabaseResponse<Reservation> getReservationByConfirmationNumber(String confirmationNumber) {
+        return new TestDatabaseResponse<>("make reservation query", true, "reservation confirmation number", new Reservation(ThreadLocalRandom.current().nextInt(100000, 200000), null, null, null, null, null, null));
     }
     
     @Override
-    public DatabaseResponse<String> rentVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
-        return new TestDatabaseResponse<>("make rental query", true, "rental confirmation number", ThreadLocalRandom.current().nextInt(100000, 200000) + "");
+    public DatabaseResponse<Reservation> getReservationByPhoneNumber(String phoneNumber) {
+        return new TestDatabaseResponse<>("make reservation query", true, "reservation confirmation number", new Reservation(ThreadLocalRandom.current().nextInt(100000, 200000), null, null, null, null, null, null));
+    }
+    
+    @Override
+    public DatabaseResponse<Rental> rentVehicle(String driversLicense, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+        return new TestDatabaseResponse<>("make rental query", true, "reservation rental number", new Rental(ThreadLocalRandom.current().nextInt(100000, 200000), ThreadLocalRandom.current().nextInt(100000, 200000), null, null, 2, "card", "123", null));
     }
     
     @Override
     public DatabaseResponse<Rental> getRental(String id) {
-        return null;
+        return new TestDatabaseResponse<>("make rental query", true, "reservation rental number", new Rental(ThreadLocalRandom.current().nextInt(100000, 200000), ThreadLocalRandom.current().nextInt(100000, 200000), null, null, 2, "card", "123", null));
     }
     
     @Override
-    public DatabaseResponse<String> returnVehicle(VehicleTypeName type, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost) {
-        return null;
+    public DatabaseResponse<String> returnVehicle(String rentalID, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost) {
+        return new TestDatabaseResponse<>("return vehicle query", true, "returned vehicle", String.valueOf(ThreadLocalRandom.current().nextInt(100000, 200000)));
     }
     
     @Override

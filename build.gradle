@@ -26,8 +26,5 @@ wrapper {
     gradleVersion = '6.0.1'
 }
 
-<<<<<<< HEAD
-mainClassName = 'Main'
-=======
+
 mainClassName = 'main.Main'
->>>>>>> e3504e02ab30808f2e1835fa638366117272046b

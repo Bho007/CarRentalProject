@@ -2,6 +2,7 @@ package model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Branch {
     private String location;
@@ -26,5 +27,19 @@ public class Branch {
         this.city = city;
         this.vehicles = new ArrayList<>();
         this.equipment = new ArrayList<>();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Branch branch = (Branch) o;
+        return Objects.equals(location, branch.location) &&
+                Objects.equals(city, branch.city);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(location, city);
     }
 }

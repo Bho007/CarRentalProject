@@ -1,12 +1,12 @@
 package jdbc;
 
+import main.DatabaseResponse;
+import main.TestDatabaseResponse;
 import model.*;
 
-import java.math.BigInteger;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
+import java.sql.Date;
+import java.util.*;
 
 import static jdbc.Query.*;
 
@@ -15,18 +15,26 @@ public class Reports {
     private static Connection conn;
     private static PreparedStatement stmt;
 
-    public static List<Return> getDailyReturns() {
+    public static DatabaseResponse<String> getDailyReturns() {
         return getDailyReturns(null);
     }
 
-    public static List<Return> getDailyReturns(Branch b) {
-        List<Return> todaysReturns = new ArrayList<>();
-        String query = "SELECT ret.*, r.vid FROM Return ret INNER JOIN Rent r ON ret.rid = r.rid " +
-                " WHERE date = ? " + ((b == null) ? "" : " AND r.vid IN (SELECT vid FROM Vehicle WHERE veh.location = ? AND veh.city = ?) ");
-        ResultSet rs;
+    public static DatabaseResponse<String> getDailyReturns(Branch b) {
+        boolean success = false;
+        RentalReport report = new RentalReport();
+
+        String vehicleQuery = "SELECT * FROM Vehicle v INNER JOIN Rent r ON v.vlicense = r.vlicense WHERE fromdate = ? " +
+                ((b == null) ? "" : "AND v.location = ? AND v.city = ? ") + "ORDER BY vtname ASC";
+        String vtGroupQuery = "SELECT COUNT(*) AS total, vtname FROM (" + vehicleQuery + ") vehicles GROUP BY vtname";
+        String branchGroupQuery = "SELECT COUNT(*) AS total, location, city FROM (" + vehicleQuery + ") vehicles GROUP BY (location, city)";
+
+        String vehQueryStringPost = "";
+        String vtGroupQueryStringPost = "";
+        String branchGroupQueryStringPost = "";
+
         try {
             conn = DriverManager.getConnection(DB_URL, USER, PASS);
-            stmt = conn.prepareStatement(query);
+            stmt = conn.prepareStatement(vehicleQuery);
 
             stmt.setDate(1, TODAY);
             if (b != null) {
@@ -34,144 +42,115 @@ public class Reports {
                 stmt.setString(3, b.getCity());
             }
 
-            rs = stmt.executeQuery();
+            vehQueryStringPost = stmt.toString();
 
-            while (rs.next()) {
-                int rid = rs.getInt("rid");
-                Date date = rs.getDate("date");
-                Time time = rs.getTime("time");
-                int odometer = rs.getInt("odometer");
-                boolean fullTank = rs.getBoolean("fulltank");
-                int value = rs.getInt("value");
+            ResultSet vehicleRs = stmt.executeQuery(vehicleQuery);
 
-                Return r = new Return(rid, date, time, odometer, fullTank, value);
+            while (vehicleRs.next()) {
+                int vid = vehicleRs.getInt("vid");
+                String vLicense = vehicleRs.getString("vlicense");
+                String make = vehicleRs.getString("make");
+                String model = vehicleRs.getString("model");
+                Integer yearInt = vehicleRs.getInt("year");
+                String year = yearInt.toString();
+                String color = vehicleRs.getString("color");
+                int odometer = vehicleRs.getInt("odometer");
 
-                todaysReturns.add(r);
+                VehicleStatus vehicleStatus = VehicleStatus.toStatus(vehicleRs.getString("vehicleStatus"));
+                VehicleTypeName vtName = VehicleTypeName.toVehicleTypeName(vehicleRs.getString("vtname"));
+
+                Vehicle v = new Vehicle(vid, vLicense, make, model, year, color, odometer, vehicleStatus, null, vtName);
+
+                report.addVehicle(v);
+            }
+            vehicleRs.close();
+
+            stmt = conn.prepareStatement(vtGroupQuery);
+            stmt.setDate(1, TODAY);
+            if (b != null) {
+                stmt.setString(2, b.getLocation());
+                stmt.setString(3, b.getCity());
             }
 
-            rs.close();
+            vtGroupQueryStringPost = stmt.toString();
+
+            ResultSet vtRs = stmt.executeQuery();
+
+            while (vtRs.next()) {
+                VehicleTypeName vtName = VehicleTypeName.toVehicleTypeName(vtRs.getString("vtname"));
+                int count = vtRs.getInt("total");
+
+                report.addVTRentalCount(vtName, count);
+            }
+
+            vtRs.close();
+
+            stmt = conn.prepareStatement(branchGroupQuery);
+            stmt.setDate(1, TODAY);
+            if (b != null) {
+                stmt.setString(2, b.getLocation());
+                stmt.setString(3, b.getCity());
+            }
+
+            branchGroupQueryStringPost = stmt.toString();
+
+            ResultSet branchRs = stmt.executeQuery();
+
+            while (branchRs.next()) {
+                String location = branchRs.getString("location");
+                String city = branchRs.getString("city");
+                Branch branch = new Branch(location, city);
+
+                int total = branchRs.getInt("total");
+
+                report.addBranchRentalCount(branch, total);
+            }
+            branchRs.close();
+
+            stmt.close();
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            return new TestDatabaseResponse<>( vehQueryStringPost + "; \n" + vtGroupQueryStringPost + "; \n" + branchGroupQueryStringPost, false, e.getMessage(), "");
         }
 
-        return todaysReturns;
+        String queryStatement = vehQueryStringPost + "; \n" + vtGroupQueryStringPost + "; \n" + branchGroupQueryStringPost;
+
+        return new TestDatabaseResponse<>(queryStatement, true, null, report.toString());
     }
 
-    public static List<Rental> getDailyRentals() {
+    public static DatabaseResponse<String> getDailyRentals() {
         return getDailyRentals(null);
     }
 
-    public static List<Rental> getDailyRentals(Branch b) {
-        List<Rental> todaysRentals = new ArrayList<>();
-        String query = "SELECT r.*, c.* FROM Rent r INNER JOIN Customer c ON r.cellphone = c.cellphone " +
-                "WHERE r.fromdate = ? " + ((b == null) ? "" : " AND r.vid IN (SELECT vid FROM vehicle veh WHERE " +
-                "veh.location = ? AND veh.city = ?" );
-        ResultSet rs;
-        try {
-            conn = DriverManager.getConnection(DB_URL, USER, PASS);
-            stmt = conn.prepareStatement(query);
-
-            stmt.setDate(1, TODAY);
-
-            if (b != null) {
-                stmt.setString(2, b.getLocation());
-                stmt.setString(3, b.getCity());
-            }
-            rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                int rid = rs.getInt("rid");
-                int vid = rs.getInt("vid");
-                Customer c = new Customer(rs.getLong("cellphone"),
-                        rs.getString("name"),
-                        rs.getString("address"),
-                        rs.getString("dlicense"));
-                TimePeriod t = new TimePeriod(rs.getDate("fromdate"), rs.getTime("fromtime"),
-                        rs.getDate("todate"), rs.getTime("totime"));
-                int odometer = rs.getInt("odometer");
-                String cardname = rs.getString("cardname");
-                String cardNo = rs.getString("cardno");
-                Date expDate = rs.getDate("expdate");
-
-                Rental r = new Rental(rid, vid, c, t, odometer, cardname, cardNo, expDate);
-
-                int confNo = rs.getInt("confno");
-
-                if (!rs.wasNull()) {
-                    String confQuery = "SELECT * FROM reservation r WHERE confno = ?";
-                    PreparedStatement confStatement = conn.prepareStatement(confQuery);
-
-                    confStatement.setInt(1, confNo);
-
-                    ResultSet reservationRs = confStatement.executeQuery();
-
-                    if (reservationRs.next()) {
-                        reservationRs.first();
-
-                        String vtName = reservationRs.getString("vtname");
-                        VehicleTypeName vt = VehicleTypeName.valueOf(vtName);
-                        Date fromDate = reservationRs.getDate("fromdate");
-                        Time fromTime = reservationRs.getTime("fromtime");
-
-                        Date toDate = reservationRs.getDate("todate");
-                        Time toTime = reservationRs.getTime("totime");
-
-                        Reservation reservation = new Reservation(confNo, vt, c, fromDate, fromTime, toDate, toTime);
-
-                        String eTypeQuery = "SELECT * FROM EType WHERE etname IN (SELECT eid FROM reserve_includes" +
-                                " WHERE rid = ?";
-
-                        PreparedStatement eTypeStatement = conn.prepareStatement(eTypeQuery);
-
-                        eTypeStatement.setInt(1, confNo);
-
-                        ResultSet eTypeRs = eTypeStatement.executeQuery();
-
-                        while (eTypeRs.next()) {
-                            String etname = eTypeRs.getString("etname");
-                            int drate = eTypeRs.getInt("drate");
-                            int hrate = eTypeRs.getInt("hrate");
-
-                            EquipType et = new EquipType(etname, drate, hrate);
-
-                            reservation.addETypeReserved(et);
-                        }
-
-                        r.addReservation(reservation);
-                    }
-                }
-
-                String equipmentQuery = "SELECT * FROM rent_includes r INNER JOIN equipment e ON r.eid = e.eid " +
-                        "INNER JOIN equiptype t ON t.etname = e.etname " +
-                        "WHERE r.rid = ?";
-
-                PreparedStatement eqStmt = conn.prepareStatement(equipmentQuery);
-                eqStmt.setInt(1, rid);
-                ResultSet eqRs = eqStmt.executeQuery();
-
-                while (eqRs.next()) {
-                    int eid = eqRs.getInt("eid");
-
-                    String etName = eqRs.getString("etname");
-                    int drate = eqRs.getInt("drate");
-                    int hrate = eqRs.getInt("hrate");
-
-                    EquipType et = new EquipType(etName, drate, hrate);
-
-                    Equipment e = new Equipment(eid, EquipmentStatus.RENTED, et);
-
-                    r.addEquipment(e);
-
-                }
-
-                todaysRentals.add(r);
-            }
-
-            rs.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return todaysRentals;
+    public static DatabaseResponse<String> getDailyRentals(Branch b) {
+        return null;
     }
+}
+
+class RentalReport {
+    List<Vehicle> vehicles;
+    Map<Branch, Integer> branchRentals;
+    Map<VehicleTypeName, Integer> vtRentals;
+
+    RentalReport() {
+        this.vehicles = new ArrayList<>();
+        this.branchRentals = new HashMap<>();
+    }
+
+    public void addVehicle(Vehicle v) {
+        vehicles.add(v);
+    }
+
+    public void addBranchRentalCount(Branch b, int count) {
+        branchRentals.put(b, count);
+    }
+
+    public void addVTRentalCount(VehicleTypeName vt, int count) {
+
+    }
+
+}
+
+class ReturnReport {
+
 }

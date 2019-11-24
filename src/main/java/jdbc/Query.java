@@ -9,7 +9,6 @@ import model.*;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,11 +94,11 @@ public class Query implements Database {
             assert (rs != null);
             while (rs.next()) {
                 VehicleStatus status = VehicleStatus.toStatus(rs.getString("status"));
-                VehicleTypeName vehicleTypeName = VehicleTypeName.toVechicleTypeName(rs.getString("vtname"));
+                VehicleTypeName vehicleTypeName = VehicleTypeName.toVehicleTypeName(rs.getString("vtname"));
                 Vehicle vehicle = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
                         rs.getString("make"), rs.getString("model"),
                         rs.getString("year"), rs.getString("color"),
-                        rs.getInt("odomoter"), status, null, vehicleTypeName);
+                        rs.getInt("odometer"), status, null, vehicleTypeName);
                 returnList.add(vehicle);
             }
             rs.close();
@@ -114,8 +113,8 @@ public class Query implements Database {
     }
 
     @Override
-    public DatabaseResponse<List<>> generateDailyRentalReport() {
-        return new ;
+    public DatabaseResponse<String> generateDailyRentalReport() {
+        return Reports.getDailyRentals() ;
     }
 
     @Override
@@ -130,6 +129,71 @@ public class Query implements Database {
 
     @Override
     public DatabaseResponse<String> generateDailyBranchReturnReport(Branch b) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Boolean> locationExists(String location) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Boolean> customerExists(String driversLicense) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Customer> getCustomer(String driversLicense) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<?> addCustomer(String phone, String name, String address, String driversLicense) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<String> reserveVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Reservation> getReservationByConfirmationNumber(String confirmationNumber) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Reservation> getReservationByPhoneNumber(String phoneNumber) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<String> rentVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Rental> getRental(String id) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<String> returnVehicle(VehicleTypeName type, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Integer> getHourlyRate(VehicleTypeName type) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Integer> getDailyRate(VehicleTypeName type) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Integer> getWeeklyRate(VehicleTypeName type) {
         return null;
     }
 
