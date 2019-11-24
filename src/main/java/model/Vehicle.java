@@ -44,15 +44,14 @@ public class Vehicle {
     @Override
     public String toString() {
         return "Vehicle ID: " + vid +
-                ", License Plate #:'" + vLicense + '\'' +
-                ", Make:" + make + '\'' +
-                ", Model:" + model + '\'' +
-                ", Year: " + year + '\'' +
-                ", Color: '" + color + '\'' +
-                ", Odometer:" + odometer +
-                ", Status: " + status +
-                ", Vehicle Type: " + vehicleTypeName +
-                '}';
+                ", License Plate #: " + vLicense +
+                ", Make: " + make +
+                ", Model: " + model +
+                ", Year: " + year  +
+                ", Color: " + color +
+                ", Odometer: " + odometer +
+                ", Status: " + (status.equals(VehicleStatus.FOR_RENT) ? "For Rent" : status.equals(VehicleStatus.RENTED) ? "Rented" : status.equals(VehicleStatus.MAINTENANCE) ? "Under Maintenance" : "For Sale") +
+                ", Vehicle Type: " + vehicleTypeName;
     }
 
     public String getYear() {

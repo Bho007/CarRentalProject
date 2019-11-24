@@ -24,7 +24,7 @@ public class Reports {
         ReturnReport report = new ReturnReport();
 
         String vehicleQuery = "SELECT * FROM Vehicle v INNER JOIN Rent r ON v.vlicense = r.vlicense INNER JOIN Return rt ON r.rid = rt.rid" +
-                " WHERE fromdate = ? " +
+                " WHERE rt.date = ? " +
                 ((b == null) ? "" : "AND v.location = ? AND v.city = ? ") + "ORDER BY (location, city), vtname ASC";
         String vtGroupQuery = "SELECT SUM(value) AS revenue, COUNT(*) AS total, vtname FROM (" + vehicleQuery + ") vehicles GROUP BY vtname";
         String branchGroupQuery = "SELECT SUM(value) AS revenue, COUNT(*) AS total, location, city FROM (" + vehicleQuery + ") vehicles GROUP BY (location, city)";
@@ -113,12 +113,13 @@ public class Reports {
             stmt.close();
 
         } catch (SQLException e) {
-            return new TestDatabaseResponse<>( vehQueryStringPost + "; \n" + vtGroupQueryStringPost + "; \n" + branchGroupQueryStringPost, false, e.getMessage(), "");
+            e.printStackTrace();
+            return new ReportDatabaseResponse( vehQueryStringPost + "; \n" + vtGroupQueryStringPost + "; \n" + branchGroupQueryStringPost, false, e.getMessage(), e.getMessage());
         }
 
         String queryStatement = vehQueryStringPost + "; \n" + vtGroupQueryStringPost + "; \n" + branchGroupQueryStringPost;
 
-        return new TestDatabaseResponse<>(queryStatement, true, null, report.toString());
+        return new ReportDatabaseResponse(queryStatement, true, report.toString(), report.toString());
     }
 
     public static DatabaseResponse<String> getDailyRentals() {
@@ -215,12 +216,13 @@ public class Reports {
             stmt.close();
 
         } catch (SQLException e) {
-            return new TestDatabaseResponse<>( vehQueryStringPost + "; \n" + vtGroupQueryStringPost + "; \n" + branchGroupQueryStringPost, false, e.getMessage(), "");
+            e.printStackTrace();
+            return new ReportDatabaseResponse( vehQueryStringPost + "; \n" + vtGroupQueryStringPost + "; \n" + branchGroupQueryStringPost, false, e.getMessage(), e.getMessage());
         }
 
         String queryStatement = vehQueryStringPost + "; \n" + vtGroupQueryStringPost + "; \n" + branchGroupQueryStringPost;
 
-        return new TestDatabaseResponse<>(queryStatement, true, null, report.toString());
+        return new ReportDatabaseResponse(queryStatement, true, report.toString(), report.toString());
     }
 }
 
@@ -260,6 +262,8 @@ class RentalReport {
             str += v.toString() + "\n";
         }
 
+        str += "\n";
+
         str += "VEHICLES RENTED OUT BY TYPE: \n";
         int total = 0;
         for (VehicleTypeName vtname: vtRentals.keySet()) {
@@ -267,17 +271,25 @@ class RentalReport {
             total += vtRentals.get(vtname);
         }
 
+        str += "\n";
+
+
         str += "VEHICLES RENTED OUT BY BRANCH: \n";
 
         for (Branch b: branchRentals.keySet()) {
-            str += b.toString() + ": " + branchRentals.get(b);
+            str += b.toString() + ": " + branchRentals.get(b) + "\n";
         }
 
-        System.out.println("TOTAL NEW RENTALS TODAY: " + total);
+        str += "\n";
+
+
+        str += "TOTAL NEW RENTALS TODAY: " + total;
 
         return str;
     }
 }
+
+
 
 class ReturnReport {
     List<Vehicle> vehicles;
@@ -295,11 +307,14 @@ class ReturnReport {
         if (vehicles.size() == 0) {
             return "No vehicles returned today";
         }
-        String str = "VEHICLES RETURNED TODAY: ";
+        String str = "VEHICLES RETURNED TODAY: \n";
 
         for (Vehicle v: vehicles) {
             str += v.toString() + "\n";
         }
+
+        str += "\n";
+
 
         str += "VEHICLES RETURNED AND REVENUE BY TYPE: \n";
         int totalReturned = 0;
@@ -311,16 +326,20 @@ class ReturnReport {
             totalReturned += vtReturns.get(vtname).get(1);
             totalRevenue += vtReturns.get(vtname).get(0);
         }
+        str += "\n";
+
 
         str += "VEHICLES RETURNED AND REVENUE BY BRANCH: \n";
 
         for (Branch b: branchReturns.keySet()) {
-            str += b.toString() + ": Returned: " + vtReturns.get(b).get(1) +  " Revenue: $" + vtReturns.get(b).get(0)
+            str += b.toString() + ": Returned: " + branchReturns.get(b).get(1) +  " Revenue: $" + branchReturns.get(b).get(0)
                     + "\n";
         }
+        str += "\n";
 
-        System.out.println("TOTAL RETURNS TODAY: " + totalReturned + "\n");
-        System.out.println("TOTAL REVENUE TODAY: $" + totalRevenue);
+        str += "TOTAL RETURNS TODAY: " + totalReturned + "\n";
+        str += "TOTAL REVENUE TODAY: $" + totalRevenue;
+
 
         return str;
     }
@@ -341,5 +360,39 @@ class ReturnReport {
         list.add(revenue);
         list.add(count);
         vtReturns.put(vt, list);
+    }
+}
+
+class ReportDatabaseResponse implements DatabaseResponse<String> {
+    private String query;
+    private boolean success;
+    private String response;
+    private String value;
+
+    public ReportDatabaseResponse(String query, boolean success, String response, String value) {
+        this.query = query;
+        this.success = success;
+        this.response = response;
+        this.value = value;
+    }
+
+    @Override
+    public String getQuery() {
+        return query;
+    }
+
+    @Override
+    public boolean isSuccess() {
+        return success;
+    }
+
+    @Override
+    public String getResponse() {
+        return response;
+    }
+
+    @Override
+    public String getValue() {
+        return value;
     }
 }
