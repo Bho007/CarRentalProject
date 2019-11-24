@@ -1,9 +1,6 @@
 package main;
 
-import model.Vehicle;
-import model.VehicleStatus;
-import model.VehicleType;
-import model.VehicleTypeName;
+import model.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -179,7 +176,72 @@ public class TestDatabase implements Database {
     public DatabaseResponse<String> generateDailyBranchReturnReport(String branch) {
         return null;
     }
-    
+
+    @Override
+    public DatabaseResponse<Boolean> locationExists(String location) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Boolean> customerExists(String driversLicense) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Customer> getCustomer(String driversLicense) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<?> addCustomer(String phone, String name, String address, String driversLicense) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<String> reserveVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Reservation> getReservationByConfirmationNumber(String confirmationNumber) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Reservation> getReservationByPhoneNumber(String phoneNumber) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<String> rentVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Rental> getRental(String id) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<String> returnVehicle(VehicleTypeName type, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Integer> getHourlyRate(VehicleTypeName type) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Integer> getDailyRate(VehicleTypeName type) {
+        return null;
+    }
+
+    @Override
+    public DatabaseResponse<Integer> getWeeklyRate(VehicleTypeName type) {
+        return null;
+    }
+
     @Override
     public DatabaseResponse<?> sendQuery(String query) {
         return null;
