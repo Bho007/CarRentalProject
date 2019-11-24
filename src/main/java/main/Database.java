@@ -10,10 +10,10 @@ public interface Database {
     DatabaseResponse<List<Vehicle>> getVehicles(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to);
     
     // return human readable string
-    DatabaseResponse<String> generateDailyRentalReport();
-    DatabaseResponse<String> generateDailyBranchRentalReport(String branch);
-    DatabaseResponse<String> generateDailyReturnReport();
-    DatabaseResponse<String> generateDailyBranchReturnReport(String branch);
+    DatabaseResponse<List<Rental>> generateDailyRentalReport();
+    DatabaseResponse<List<Rental>> generateDailyBranchRentalReport(Branch b);
+    DatabaseResponse<List<Return>> generateDailyReturnReport();
+    DatabaseResponse<List<Return>> generateDailyBranchReturnReport(Branch b);
     
     DatabaseResponse<Boolean> locationExists(String location);
     DatabaseResponse<Boolean> customerExists(String driversLicense);
@@ -45,4 +45,6 @@ public interface Database {
     DatabaseResponse<Integer> getWeeklyRate(VehicleTypeName type);
     
     DatabaseResponse<?> sendQuery(String query);
+
+
 }

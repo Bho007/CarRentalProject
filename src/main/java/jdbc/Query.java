@@ -5,10 +5,7 @@ package jdbc;
 import main.Database;
 import main.DatabaseResponse;
 import main.TestDatabaseResponse;
-import model.Vehicle;
-import model.VehicleStatus;
-import model.VehicleType;
-import model.VehicleTypeName;
+import model.*;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -117,12 +114,12 @@ public class Query implements Database {
     }
 
     @Override
-    public DatabaseResponse<String> generateDailyRentalReport() {
-        return null;
+    public DatabaseResponse<List<>> generateDailyRentalReport() {
+        return new ;
     }
 
     @Override
-    public DatabaseResponse<String> generateDailyBranchRentalReport(String branch) {
+    public DatabaseResponse<String> generateDailyBranchRentalReport(Branch b) {
         return null;
     }
 
@@ -132,7 +129,7 @@ public class Query implements Database {
     }
 
     @Override
-    public DatabaseResponse<String> generateDailyBranchReturnReport(String branch) {
+    public DatabaseResponse<String> generateDailyBranchReturnReport(Branch b) {
         return null;
     }
 
