@@ -6,8 +6,12 @@ import main.Database;
 import main.DatabaseResponse;
 import model.*;
 
+import javax.swing.text.DateFormatter;
+import java.math.BigInteger;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +30,8 @@ public class Query implements Database {
     private static Connection conn;
 
     private static final Query QUERY_INSTANCE = new Query();
+
+    //private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private Query() {
         try {
@@ -347,7 +353,7 @@ public class Query implements Database {
         String query = "insert into public.customer (cellphone, name, address, dlicense) values (?,?,?,?)";
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
-            stmt.setInt(1, Integer.parseInt(phone));
+            stmt.setLong(1, Long.parseLong(phone));
             stmt.setString(2, name);
             stmt.setString(3, address);
             stmt.setString(4, driversLicense);
@@ -361,17 +367,38 @@ public class Query implements Database {
         return new StringResponse(query, true, SUCCESS, "");
     }
 
+    private boolean createTimePeriod(LocalDateTime from, LocalDateTime to) {
+        Date fromDate = Date.valueOf(from.toLocalDate());
+        Time fromTime = Time.valueOf(from.toLocalTime());
+        Date toDate = Date.valueOf(to.toLocalDate());
+        Time toTime = Time.valueOf(to.toLocalTime());
+        String query = "insert into public.timeperiod (fromdate, fromtime, todate, totime) values (?, ?, ?, ?)";
+        try {
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setDate(1, fromDate);
+            stmt.setTime(2, fromTime);
+            stmt.setDate(3, toDate);
+            stmt.setTime(4, toTime);
+            return stmt.executeUpdate() > -1;
+        } catch (SQLException e) {
+            if (e.getSQLState().equals("23505")) {
+                return true;
+            }
+            return false;
+        }
+    }
+
     @Override
     public DatabaseResponse<Reservation> reserveVehicle(String driversLicense, String phoneNumber, VehicleTypeName type,
                                                         String location, LocalDateTime from, LocalDateTime to) {
         String response = SUCCESS;
-        boolean success = customerExists(driversLicense).getValue();
+        boolean success = customerExists(driversLicense).getValue() && createTimePeriod(from, to);
         String query = "insert into public.reservation (vtname, cellphone, fromdate, fromtime, todate, totime) values (?,?,?,?,?,?)";
         if (success) {
             try {
                 PreparedStatement stmt = conn.prepareStatement(query);
                 stmt.setString(1, type.getName());
-                stmt.setString(2, driversLicense);
+                stmt.setLong(2, Long.parseLong(phoneNumber));
                 stmt.setDate(3, Date.valueOf(from.toLocalDate()));
                 stmt.setTime(4, Time.valueOf(from.toLocalTime()));
                 stmt.setDate(5, Date.valueOf(to.toLocalDate()));
@@ -383,12 +410,13 @@ public class Query implements Database {
                         getReservationByPhoneNumber(phoneNumber).getValue().getConfNo();
                 return new ReservationResponse(query, success, response, getReservationByPhoneNumber(phoneNumber).getValue());
             } catch (SQLException e) {
+                success = false;
                 response = ERROR;
             }
         } else {
-            response = "customer does not exist";
+            response = "customer does not exist or time period does not exist";
         }
-        return new ReservationResponse(query, false, response, null);
+        return new ReservationResponse(query, success, response, null);
     }
 
     private String getReservationNumber(VehicleTypeName type, String dlicense, LocalDateTime from, LocalDateTime to) {
@@ -441,8 +469,8 @@ public class Query implements Database {
                 Time fromTime = rs.getTime("fromtime");
                 Date toDate = rs.getDate("toDate");
                 Time toTime = rs.getTime("toTime");
-                LocalDateTime from = LocalDateTime.parse(fromDate.toString() + fromTime.toString());
-                LocalDateTime to = LocalDateTime.parse(toDate.toString() + toTime.toString());
+                LocalDateTime from = LocalDateTime.of(fromDate.toLocalDate(), fromTime.toLocalTime());
+                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate() , toTime.toLocalTime());
                 res = new Reservation(rs.getInt("confno"),
                         VehicleTypeName.toVehicleTypeName(rs.getString("vtname")),
                         rs.getLong("cellphone"), from, to);
@@ -478,8 +506,8 @@ public class Query implements Database {
                 Time fromTime = rs.getTime("fromtime");
                 Date toDate = rs.getDate("toDate");
                 Time toTime = rs.getTime("toTime");
-                LocalDateTime from = LocalDateTime.parse(fromDate.toString() + " " + fromTime.toString());
-                LocalDateTime to = LocalDateTime.parse(toDate.toString() + " " + toTime.toString());
+                LocalDateTime from = LocalDateTime.of(fromDate.toLocalDate(), fromTime.toLocalTime());
+                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate() , toTime.toLocalTime());
                 res = new Reservation(rs.getInt("confno"),
                         VehicleTypeName.toVehicleTypeName(rs.getString("vtname")),
                         rs.getLong("cellphone"), from, to);
@@ -502,7 +530,7 @@ public class Query implements Database {
                                                 VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to,
                                                 String creditCardNumber, String expiryMonth, String expiryYear, String creditCardType) {
         String response = SUCCESS;
-        boolean success = locationExists(location).getValue();
+        boolean success = locationExists(location).getValue() && createTimePeriod(from, to);
         String query = "";
         List<Vehicle> vehicles = getVehicles(type, location, from, to).getValue();
         success = success && !vehicles.isEmpty();
@@ -614,8 +642,8 @@ public class Query implements Database {
                 Time fromTime = rs.getTime("fromtime");
                 Date toDate = rs.getDate("toDate");
                 Time toTime = rs.getTime("toTime");
-                LocalDateTime from = LocalDateTime.parse(fromDate.toString() + " " + fromTime.toString());
-                LocalDateTime to = LocalDateTime.parse(toDate.toString() + " " + toTime.toString());
+                LocalDateTime from = LocalDateTime.of(fromDate.toLocalDate(), fromTime.toLocalTime());
+                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate() , toTime.toLocalTime());
                 String vlicense = rs.getString("vlicense");
                 Long phone = rs.getLong("cellphone");
                 Vehicle vehicle = getVehicle(vlicense).getValue();
@@ -763,6 +791,7 @@ public class Query implements Database {
             stmt.setString(1, type.getName());
             query = stmt.toString();
             ResultSet rs = stmt.executeQuery();
+            rs.next();
             int ret = rs.getInt(rateVar);
             rs.close();
             stmt.close();

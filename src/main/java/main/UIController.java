@@ -408,11 +408,11 @@ public class UIController {
         vehicleTypeSelectionTitleLabel.setText("Reserve Vehicles");
         vehicleTypeSelectionPane.setVisible(true);
         if (vehicleTypeSelectionComboBox.getItems().isEmpty()) {
-            vehicleTypeSelectionComboBox.getItems().add("Any");
-            vehicleTypeSelectionComboBox.getSelectionModel().selectFirst();
+            // vehicleTypeSelectionComboBox.getItems().add("Any");
             Arrays.stream(VehicleTypeName.values())
                     .map(VehicleTypeName::getName)
                     .forEach(e -> vehicleTypeSelectionComboBox.getItems().add(e));
+            vehicleTypeSelectionComboBox.getSelectionModel().selectFirst();
         }
         setReservation(true);
     }
@@ -420,6 +420,9 @@ public class UIController {
     @FXML
     public void processVehicleType(ActionEvent actionEvent) {
         vehicleTypeSelectionErrorLabel.setVisible(false);
+        durationStartDatePicker.setValue(null);
+        durationEndDatePicker.setValue(null);
+        durationErrorLabel.setVisible(false);
 
         if (vehicleTypeSelectionLocationTextField.getText().isBlank()) {
             vehicleTypeSelectionErrorLabel.setVisible(true);
@@ -467,6 +470,7 @@ public class UIController {
     @FXML
     public void processDuration(ActionEvent actionEvent) {
         durationErrorLabel.setVisible(false);
+        customerInformationErrorLabel.setVisible(false);
 
         if (durationStartDatePicker.getValue() == null) {
             durationErrorLabel.setText("Invalid Start Date");
@@ -666,7 +670,10 @@ public class UIController {
             }
         }
 
-        computeCost();
+        boolean updateCost = computeCost();
+        if (!updateCost) {
+            return;
+        }
 
         if (isReservation) {
             DatabaseResponse<Reservation> confirmationNumber = Main.database.reserveVehicle(driversLicense,
@@ -699,29 +706,29 @@ public class UIController {
             confirmationTitledPane.setText("Reservation Complete");
             confirmationPane.setVisible(true);
         } else if (isRental) {
-            DatabaseResponse<Boolean> customerExists = Main.database.customerExists(driversLicense);
-            logResponse(customerExists);
-
-            if (customerExists.isSuccess()) {
-                if (customerExists.getValue()) {
-                    customerInformationErrorLabel.setText("Customer already exists");
-                    customerInformationErrorLabel.setVisible(true);
-                    return;
-                } else {
-                    DatabaseResponse<?> addCustomer = Main.database.addCustomer(phone, name, address, driversLicense);
-                    logResponse(addCustomer);
-
-                    if (!addCustomer.isSuccess()) {
-                        customerInformationErrorLabel.setText("Unable to add customer - please start over");
-                        customerInformationErrorLabel.setVisible(true);
-                        return;
-                    }
-                }
-            } else {
-                customerInformationErrorLabel.setText(customerExists.getResponse());
-                customerInformationErrorLabel.setVisible(true);
-                return;
-            }
+            // DatabaseResponse<Boolean> customerExists = Main.database.customerExists(driversLicense);
+            // logResponse(customerExists);
+            //
+            // if (customerExists.isSuccess()) {
+            //     if (customerExists.getValue()) {
+            //         customerInformationErrorLabel.setText("Customer already exists");
+            //         customerInformationErrorLabel.setVisible(true);
+            //         return;
+            //     } else {
+            //         DatabaseResponse<?> addCustomer = Main.database.addCustomer(phone, name, address, driversLicense);
+            //         logResponse(addCustomer);
+            //
+            //         if (!addCustomer.isSuccess()) {
+            //             customerInformationErrorLabel.setText("Unable to add customer - please start over");
+            //             customerInformationErrorLabel.setVisible(true);
+            //             return;
+            //         }
+            //     }
+            // } else {
+            //     customerInformationErrorLabel.setText(customerExists.getResponse());
+            //     customerInformationErrorLabel.setVisible(true);
+            //     return;
+            // }
 
             // TODO get payment information
             // TODO generate confirmation number
@@ -794,8 +801,10 @@ public class UIController {
         }
 
         if (isRental) {
-            computeCost();
-
+            boolean update = computeCost();
+            if (!update) {
+                return;
+            }
             // if (vehicleTypeName.equalsIgnoreCase("Any")) {
             //     paymentInformationErrorLabel.setVisible(true);
             //     paymentInformationErrorLabel.setText("Invalid internal state - please start over.");
@@ -838,8 +847,10 @@ public class UIController {
             confirmationLocationLabel.setText(location);
             // confirmationEstimatedCostLabel.setText(String.valueOf(cost));
         } else if (isReturn) {
-            computeCost();
-
+            boolean update = computeCost();
+            if (!update) {
+                return;
+            }
             // TODO
             if (vehicleTypeName == null || vehicleTypeName.equalsIgnoreCase("Any")) {
                 paymentInformationErrorLabel.setVisible(true);
@@ -1080,14 +1091,6 @@ public class UIController {
         DatabaseResponse<Rental> rental = Main.database.getRental(rentalID);
         logResponse(rental);
 
-        // TODO set user information from rental info
-        phone = String.valueOf(rental.getValue().getCustomer().getCellPhone());
-        name = rental.getValue().getCustomer().getName();
-        address = rental.getValue().getCustomer().getAddress();
-        driversLicense = rental.getValue().getCustomer().getDlicense();
-        vehicleTypeName = rental.getValue().getReservation().getVtName().getName();
-
-
         if (rental.isSuccess()) {
             if (rentalEndDateTime.isBefore(rental.getValue().getTo())) {
                 returnVehicleStatusErrorLabel.setVisible(true);
@@ -1100,9 +1103,16 @@ public class UIController {
                 rentalStartMinute = String.valueOf(rentalStartDateTime.getMinute());
                 rentalStartPeriod = rentalStartDateTime.getHour() >= 12 ? "am" : "pm";
 
-                // vehicleTypeName = rental.getValue().getVid()
+                phone = String.valueOf(rental.getValue().getCustomer().getCellPhone());
+                name = rental.getValue().getCustomer().getName();
+                address = rental.getValue().getCustomer().getAddress();
+                driversLicense = rental.getValue().getCustomer().getDlicense();
+                vehicleTypeName = rental.getValue().getReservation().getVtName().getName();
 
-                computeCost();
+                boolean updateCosts = computeCost();
+                if (!updateCosts) {
+                    return;
+                }
 
                 DatabaseResponse<String> returnVehicle = Main.database.returnVehicle(rentalID, location, rentalEndDateTime, odometer, gasTankIsFull, cost);
                 logResponse(returnVehicle);
@@ -1121,7 +1131,11 @@ public class UIController {
         }
 
         // set confirmation for return
-        computeCost();
+        boolean updateCosts = computeCost();
+        if (!updateCosts) {
+            return;
+        }
+
         confirmationNumberLabel.setText(String.valueOf(rental.getValue().getRid()));
         confirmationCustomerNameLabel.setText(name);
         confirmationDriversLicenseLabel.setText(driversLicense);
@@ -1273,7 +1287,7 @@ public class UIController {
         return date.toLocalDate().atTime(time.toLocalTime());
     }
 
-    private void computeCost() {
+    private boolean computeCost() {
         paymentInformationErrorLabel.setVisible(false);
         customerInformationErrorLabel.setVisible(false);
         returnVehicleStatusErrorLabel.setVisible(false);
@@ -1299,7 +1313,7 @@ public class UIController {
 
             returnVehicleStatusErrorLabel.setVisible(true);
             returnVehicleStatusErrorLabel.setText("Invalid internal state - please start over");
-            return;
+            return false;
         }
 
         long weeks = start.until(end, ChronoUnit.DAYS) / 7;
@@ -1319,11 +1333,11 @@ public class UIController {
                 if (rentVehicleNewCustomerRadioButton.isSelected()) {
                     paymentInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
                     paymentInformationErrorLabel.setVisible(true);
-                    return;
+                    return false;
                 } else {
                     customerInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
                     customerInformationErrorLabel.setVisible(true);
-                    return;
+                    return false;
                 }
             }
 
@@ -1356,11 +1370,11 @@ public class UIController {
                 if (rentVehicleNewCustomerRadioButton.isSelected()) {
                     paymentInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
                     paymentInformationErrorLabel.setVisible(true);
-                    return;
+                    return false;
                 } else {
                     customerInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
                     customerInformationErrorLabel.setVisible(true);
-                    return;
+                    return false;
                 }
             }
 
@@ -1393,6 +1407,7 @@ public class UIController {
             confirmationEstimatedCostLabel.setText(costBreakdown);
             cost = maxComputedCost;
         }
+        return true;
     }
 
     private void logResponse(DatabaseResponse<?> response) {
