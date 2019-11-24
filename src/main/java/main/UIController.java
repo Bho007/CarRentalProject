@@ -666,6 +666,7 @@ public class UIController {
         
         if (isReservation) {
             DatabaseResponse<Reservation> confirmationNumber = Main.database.reserveVehicle(driversLicense,
+                    phone, 
                     vehicleTypeName.equalsIgnoreCase("any") ?
                             null :
                             VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()),

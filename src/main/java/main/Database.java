@@ -25,7 +25,7 @@ public interface Database {
     
     // return confirmation number, if type == null, reserve any type of vehicle
     // return error message with what went wrong in the case of failure
-    DatabaseResponse<Reservation> reserveVehicle(String driversLicense, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to);
+    DatabaseResponse<Reservation> reserveVehicle(String driversLicense, String phoneNumber, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to);
     
     DatabaseResponse<Reservation> getReservationByConfirmationNumber(String confirmationNumber);
     DatabaseResponse<Reservation> getReservationByPhoneNumber(String phoneNumber);

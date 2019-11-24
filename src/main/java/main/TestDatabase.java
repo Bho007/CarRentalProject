@@ -164,7 +164,7 @@ public class TestDatabase implements Database {
     }
     
     @Override
-    public DatabaseResponse<Reservation> reserveVehicle(String driversLicense, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+    public DatabaseResponse<Reservation> reserveVehicle(String driversLicense, String phoneNumber, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
         return new TestDatabaseResponse<>("make reservation query", true, "reservation confirmation number", new Reservation(ThreadLocalRandom.current().nextInt(100000, 200000), null, null, null, null, null, null));
     }
     
