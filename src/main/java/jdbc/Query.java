@@ -5,6 +5,7 @@ package jdbc;
 import main.Database;
 import main.DatabaseResponse;
 import model.*;
+
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -122,7 +123,9 @@ public class Query implements Database {
             response = "invalid location";
         }
         List<Vehicle> dQ = getRentedVehicles(type, location, from, to);
-        if (returnList.size() == dQ.size()) {response = "no available vehicles";}
+        if (returnList.size() == dQ.size()) {
+            response = "no available vehicles";
+        }
         returnList.removeAll(dQ);
         return new VehicleListResponse(query, success, response, returnList);
     }
@@ -339,7 +342,7 @@ public class Query implements Database {
             ResultSet resultSet = stmt.executeQuery();
             int counter = 0;
             while (resultSet.next()) {
-                ret = new Customer(resultSet.getInt("cellphone"), resultSet.getString("name"),
+                ret = new Customer(resultSet.getLong("cellphone"), resultSet.getString("name"),
                         resultSet.getString("address"), resultSet.getString("dlicense"));
                 counter++;
             }
@@ -496,7 +499,7 @@ public class Query implements Database {
                 Date toDate = rs.getDate("toDate");
                 Time toTime = rs.getTime("toTime");
                 LocalDateTime from = LocalDateTime.of(fromDate.toLocalDate(), fromTime.toLocalTime());
-                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate() , toTime.toLocalTime());
+                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate(), toTime.toLocalTime());
                 res = new Reservation(rs.getInt("confno"),
                         VehicleTypeName.toVehicleTypeName(rs.getString("vtname")),
                         rs.getLong("cellphone"), from, to);
@@ -533,7 +536,7 @@ public class Query implements Database {
                 Date toDate = rs.getDate("toDate");
                 Time toTime = rs.getTime("toTime");
                 LocalDateTime from = LocalDateTime.of(fromDate.toLocalDate(), fromTime.toLocalTime());
-                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate() , toTime.toLocalTime());
+                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate(), toTime.toLocalTime());
                 res = new Reservation(rs.getInt("confno"),
                         VehicleTypeName.toVehicleTypeName(rs.getString("vtname")),
                         rs.getLong("cellphone"), from, to);
@@ -582,7 +585,7 @@ public class Query implements Database {
                 query = stmt.toString();
                 success = stmt.executeUpdate() > 0;
                 rental = new Rental(getRID(phone, confirmationNumber, type, location, from, to, creditCardNumber,
-                        expiryMonth, expiryYear, creditCardType,tobeRented), tobeRented, getCustomer(Long.parseLong(phone)), from, to,
+                        expiryMonth, expiryYear, creditCardType, tobeRented), tobeRented, getCustomer(Long.parseLong(phone)), from, to,
                         tobeRented.getOdometer(), creditCardType, creditCardNumber, Date.valueOf(ldt.toLocalDate()),
                         getReservationByPhoneNumber(phone).getValue(), null);
                 stmt.close();
@@ -639,11 +642,11 @@ public class Query implements Database {
             stmt.setInt(8, vehicle.getOdometer());
             stmt.setString(9, creditCardType);
             stmt.setLong(10, Long.parseLong(creditCardNumber));
-            LocalDateTime ldt = LocalDateTime.of(Integer.parseInt(expiryYear), Integer.parseInt(expiryMonth), 1, 4,5);
+            LocalDateTime ldt = LocalDateTime.of(Integer.parseInt(expiryYear), Integer.parseInt(expiryMonth), 1, 4, 5);
             stmt.setDate(11, Date.valueOf(ldt.toLocalDate()));
             ResultSet rs = stmt.executeQuery();
             int counter = 0;
-            while(rs.next()) {
+            while (rs.next()) {
                 ret = rs.getInt("rid");
                 counter++;
             }
@@ -675,7 +678,7 @@ public class Query implements Database {
                 Date toDate = rs.getDate("toDate");
                 Time toTime = rs.getTime("toTime");
                 LocalDateTime from = LocalDateTime.of(fromDate.toLocalDate(), fromTime.toLocalTime());
-                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate() , toTime.toLocalTime());
+                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate(), toTime.toLocalTime());
                 String vlicense = rs.getString("vlicense");
                 Long phone = rs.getLong("cellphone");
                 Vehicle vehicle = getVehicle(vlicense).getValue();
@@ -706,8 +709,8 @@ public class Query implements Database {
 
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
-                stmt.setString(1, vlicense);
-                query = stmt.toString();
+            stmt.setString(1, vlicense);
+            query = stmt.toString();
             ResultSet rs = stmt.executeQuery();
             assert (rs != null);
             while (rs.next()) {
@@ -726,7 +729,9 @@ public class Query implements Database {
             success = false;
             response = ERROR;
         }
-        if (success) {response = "did not find vehicle";}
+        if (success) {
+            response = "did not find vehicle";
+        }
         return new VehicleResponse(query, success, response, null);
     }
 
@@ -751,10 +756,17 @@ public class Query implements Database {
                 success = stmt.executeUpdate() > 0;
                 stmt.close();
             } catch (SQLException e) {
-                success = false;
-                response = ERROR;
+                if (!e.getSQLState().equals("23505")) {
+                    success = false;
+                    response = ERROR;
+                } else {
+                    success = false;
+                    response = "vehicle already returned";
+                }
             }
-        } else {response = "invalid location";}
+        } else {
+            response = "invalid location";
+        }
         // update VEHICLE STATUS
         if (updateVehicleStatus(v, v.getStatus())) {
             return new StringResponse(query, success, response, response);
@@ -795,19 +807,14 @@ public class Query implements Database {
     private List<List<String>> resultSetString(ResultSet rs) {
         List<List<String>> list = new ArrayList<>();
         try {
+            int cols = rs.getMetaData().getColumnCount();
             while (rs.next()) {
-                rs.last();
-                int rows = rs.getRow();
-                int cols = rs.getMetaData().getColumnCount();
-                rs.first();
-                while(rows-->0) {
-                    int counter = cols;
-                    List<String> arr = new ArrayList<>();
-                    while(cols-->0) {
-                        arr.add(rs.getString(cols));
-                    }
-                    list.add(arr);
+                int counter = cols;
+                List<String> arr = new ArrayList<>();
+                while (counter--> 0) {
+                    arr.add(rs.getString(counter));
                 }
+                list.add(arr);
             }
         } catch (SQLException e) {
             //return list;
