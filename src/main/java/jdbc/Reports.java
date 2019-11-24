@@ -21,13 +21,19 @@ public class Reports {
 
     public static List<Return> getDailyReturns(Branch b) {
         List<Return> todaysReturns = new ArrayList<>();
-        String query = "SELECT * FROM Return WHERE date = ?";
+        String query = "SELECT ret.*, r.vid FROM Return ret INNER JOIN Rent r ON ret.rid = r.rid " +
+                " WHERE date = ? " + ((b == null) ? "" : " AND r.vid IN (SELECT vid FROM Vehicle WHERE veh.location = ? AND veh.city = ?) ");
         ResultSet rs;
         try {
             conn = DriverManager.getConnection(DB_URL, USER, PASS);
             stmt = conn.prepareStatement(query);
 
             stmt.setDate(1, TODAY);
+            if (b != null) {
+                stmt.setString(2, b.getLocation());
+                stmt.setString(3, b.getCity());
+            }
+
             rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -58,13 +64,19 @@ public class Reports {
     public static List<Rental> getDailyRentals(Branch b) {
         List<Rental> todaysRentals = new ArrayList<>();
         String query = "SELECT r.*, c.* FROM Rent r INNER JOIN Customer c ON r.cellphone = c.cellphone " +
-                "WHERE r.fromdate = ?";
+                "WHERE r.fromdate = ? " + ((b == null) ? "" : " AND r.vid IN (SELECT vid FROM vehicle veh WHERE " +
+                "veh.location = ? AND veh.city = ?" );
         ResultSet rs;
         try {
             conn = DriverManager.getConnection(DB_URL, USER, PASS);
             stmt = conn.prepareStatement(query);
 
             stmt.setDate(1, TODAY);
+
+            if (b != null) {
+                stmt.setString(2, b.getLocation());
+                stmt.setString(3, b.getCity());
+            }
             rs = stmt.executeQuery();
 
             while (rs.next()) {

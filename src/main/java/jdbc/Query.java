@@ -21,11 +21,11 @@ import java.util.List;
 public class Query implements Database {
 
     // Database URL
-    private static final String DB_URL = "jdbc:postgresql://34.94.14.233:5432/postgres";
+    public static final String DB_URL = "jdbc:postgresql://34.94.14.233:5432/postgres";
 
     //  Database credentials
-    private static final String USER = "postgres";
-    private static final String PASS = "hunter2";
+    public static final String USER = "postgres";
+    public static final String PASS = "hunter2";
 
     private static Connection conn;
 
