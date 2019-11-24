@@ -161,8 +161,27 @@ public class Query implements Database {
 
     @Override
     public DatabaseResponse<Boolean> branchExists(String location, String city) {
-        return null;
+        boolean ret = false;
+        boolean success = true;
+        String query = "SELECT b.*\n" +
+                "FROM public.branch b\n" +
+                "WHERE b.location = ? and b.city = ?";
+        try {
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setString(1, location);
+            stmt.setString(2, city);
+            query = stmt.toString();
+            ResultSet resultSet = stmt.executeQuery();
+            ret = resultSet.next();
+            resultSet.close();
+            stmt.close();
+        } catch (SQLException e) {
+            //StackTrace();
+            success = false;
+        }
+        return new BooleanResponse(query, success, getResponse(ret), ret);
     }
+
 
     @Override
     public DatabaseResponse<Boolean> customerExists(String driversLicense) {
