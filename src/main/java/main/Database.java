@@ -32,13 +32,15 @@ public interface Database {
 
     // return confirmation number, if type == null, rent any type of vehicle
     // return error message with what went wrong in the case of failure
-    DatabaseResponse<String> rentVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to);
+    DatabaseResponse<Rental> rentVehicle(String driversLicense, String phone, String confirmatioNumber,
+                                         VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to,
+                                         String creditCardNumber, String expiryMonth, String expiryYear, String creditCardType);
 
     DatabaseResponse<Rental> getRental(String id);
 
     // only deviation: front-end computes the cost instead of the backend
-    DatabaseResponse<String> returnVehicle(VehicleTypeName type, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost);
-
+    DatabaseResponse<String> returnVehicle(String rentalID, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost);
+    DatabaseResponse<Vehicle> getVehicle(String rentalID);
     // type is not null
     DatabaseResponse<Integer> getHourlyRate(VehicleTypeName type);
     DatabaseResponse<Integer> getDailyRate(VehicleTypeName type);

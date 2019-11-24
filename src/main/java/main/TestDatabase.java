@@ -213,9 +213,14 @@ public class TestDatabase implements Database {
     }
 
     @Override
-    public DatabaseResponse<String> rentVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+    public DatabaseResponse<Rental> rentVehicle(String driversLicense, String phone, String confirmatioNumber, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to, String creditCardNumber, String expiryMonth, String expiryYear, String creditCardType) {
         return null;
     }
+
+//    @Override
+//    public DatabaseResponse<String> rentVehicle(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+//        return null;
+//    }
 
     @Override
     public DatabaseResponse<Rental> getRental(String id) {
@@ -223,9 +228,19 @@ public class TestDatabase implements Database {
     }
 
     @Override
-    public DatabaseResponse<String> returnVehicle(VehicleTypeName type, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost) {
+    public DatabaseResponse<String> returnVehicle(String rentalID, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost) {
         return null;
     }
+
+    @Override
+    public DatabaseResponse<Vehicle> getVehicle(String rentalID) {
+        return null;
+    }
+
+//    @Override
+//    public DatabaseResponse<String> returnVehicle(VehicleTypeName type, String location, LocalDateTime time, String odometer, boolean gasTankIsFull, int cost) {
+//        return null;
+//    }
 
     @Override
     public DatabaseResponse<Integer> getHourlyRate(VehicleTypeName type) {
