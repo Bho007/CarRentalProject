@@ -32,7 +32,7 @@ public interface Database {
     
     // return confirmation number, if type == null, rent any type of vehicle
     // return error message with what went wrong in the case of failure
-    DatabaseResponse<Rental> rentVehicle(String driversLicense, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to);
+    DatabaseResponse<Rental> rentVehicle(String driversLicense, String phone, String confirmationNumber, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to, String creditCardNumber, String expiryMonth, String expiryYear, String creditCardType);
     
     DatabaseResponse<Rental> getRental(String id);
     

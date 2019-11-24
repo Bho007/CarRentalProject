@@ -179,7 +179,7 @@ public class TestDatabase implements Database {
     }
     
     @Override
-    public DatabaseResponse<Rental> rentVehicle(String driversLicense, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+    public DatabaseResponse<Rental> rentVehicle(String driversLicense, String phone, String confirmationNumber, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to, String creditCardNumber, String expiryMonth, String expiryYear, String creditCardType) {
         return new TestDatabaseResponse<>("make rental query", true, "reservation rental number", new Rental(ThreadLocalRandom.current().nextInt(100000, 200000), ThreadLocalRandom.current().nextInt(100000, 200000), null, null, 2, "card", "123", null));
     }
     
