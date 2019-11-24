@@ -1,82 +1,84 @@
 package model;
+
 import java.sql.Date;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Rental {
     private int rid;
-    private int vid;
+    private Vehicle vehicle;
     private Customer customer;
-    private TimePeriod timePeriod;
+    private LocalDateTime from;
+    private LocalDateTime to;
     private int odometer;
     private String cardName;
     private String cardNo;
     private Date cardExpiryDate;
-    
+
     private Reservation reservation;
     private Return rentalReturn;
     private List<Equipment> equipment;
-    
-    public Rental(int rid, int vid, Customer customer, TimePeriod timePeriod, int odometer, String cardName, String cardNo, Date cardExpiryDate) {
+
+    public Rental(int rid, Vehicle vehicle, Customer customer, LocalDateTime from, LocalDateTime to, int odometer, String cardName, String cardNo, Date cardExpiryDate, Reservation reservation, List<Equipment> equipment) {
         this.rid = rid;
-        this.vid = vid;
+        this.vehicle = vehicle;
         this.customer = customer;
-        this.timePeriod = timePeriod;
+        this.from = from;
+        this.to = to;
         this.odometer = odometer;
         this.cardName = cardName;
         this.cardNo = cardNo;
         this.cardExpiryDate = cardExpiryDate;
         this.equipment = new ArrayList<>();
     }
-    
+
     public void addReservation(Reservation r) {
         this.reservation = r;
     }
-    
+
     public void addReturn(Return r) {
         this.rentalReturn = r;
     }
-    
-    public void addEquipment(Equipment e) {
-        equipment.add(e);
-    }
-    
+
     public int getRid() {
         return rid;
     }
-    
-    public int getVid() {
-        return vid;
+
+    public Vehicle getVehicle() {
+        return vehicle;
     }
-    
+
     public Customer getCustomer() {
         return customer;
     }
-    
-    public TimePeriod getTimePeriod() {
-        return timePeriod;
+
+    public LocalDateTime getFrom() {
+        return from;
     }
-    
+
+    public LocalDateTime getTo() {return to;}
+
     public int getOdometer() {
         return odometer;
     }
-    
+
     public String getCardName() {
         return cardName;
     }
-    
+
     public String getCardNo() {
         return cardNo;
     }
-    
+
     public Date getCardExpiryDate() {
         return cardExpiryDate;
     }
-    
+
     public Reservation getReservation() {
         return reservation;
     }
-    
+
     public List<Equipment> getEquipment() {
         return equipment;
     }

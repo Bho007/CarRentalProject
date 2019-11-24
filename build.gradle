@@ -26,5 +26,4 @@ wrapper {
     gradleVersion = '6.0.1'
 }
 
-
-mainClassName = 'main.Main'
+mainClassName = 'src\\main\\java\\main\\Main.java'
