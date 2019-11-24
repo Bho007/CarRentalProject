@@ -338,7 +338,6 @@ public class UIController {
                     filterLocationTextField.getText(),
                     filterFromDatePicker.getValue() == null ? null : filterFromDatePicker.getValue().atStartOfDay(),
                     filterToDatePicker.getValue() == null ? null : filterToDatePicker.getValue().atStartOfDay());
-            
             logResponse(response);
             
             if (response.isSuccess()) {
@@ -666,6 +665,7 @@ public class UIController {
         
         if (isReservation) {
             DatabaseResponse<Reservation> confirmationNumber = Main.database.reserveVehicle(driversLicense,
+                    phone,
                     vehicleTypeName.equalsIgnoreCase("any") ?
                             null :
                             VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()),
@@ -791,21 +791,34 @@ public class UIController {
         if (isRental) {
             computeCost();
             
-            if (vehicleTypeName.equalsIgnoreCase("Any")) {
-                paymentInformationErrorLabel.setVisible(true);
-                paymentInformationErrorLabel.setText("Invalid internal state - please start over.");
-                return;
-            } else {
-                DatabaseResponse<Rental> rentVehicle = Main.database.rentVehicle(driversLicense, VehicleTypeName.valueOf(vehicleTypeName), location, fromDateTime, endDateTime);
+            // if (vehicleTypeName.equalsIgnoreCase("Any")) {
+            //     paymentInformationErrorLabel.setVisible(true);
+            //     paymentInformationErrorLabel.setText("Invalid internal state - please start over.");
+            //     return;
+            // } else {
+            
+            if (rentVehicleNewCustomerRadioButton.isSelected()) { 
+                DatabaseResponse<Reservation> reservation = Main.database.reserveVehicle(driversLicense, phone, vehicleTypeName == null ? null : VehicleTypeName.valueOf(vehicleTypeName), location, fromDateTime, endDateTime);
+                logResponse(reservation);
                 
-                if (!rentVehicle.isSuccess()) {
+                if (!reservation.isSuccess()) {
                     paymentInformationErrorLabel.setVisible(true);
-                    paymentInformationErrorLabel.setText(rentVehicle.getResponse());
+                    paymentInformationErrorLabel.setText(reservation.getResponse());
                     return;
-                } else {
-                    confirmationNumberLabel.setText(String.valueOf(rentVehicle.getValue().getRid()));
                 }
             }
+            
+            DatabaseResponse<Rental> rentVehicle = Main.database.rentVehicle(driversLicense, phone, confirmationNumber, vehicleTypeName == null ? null : VehicleTypeName.valueOf(vehicleTypeName), location, fromDateTime, endDateTime, creditCardNumber, expiryMonth, expiryYear, creditCardType);
+            logResponse(rentVehicle);
+            
+            if (!rentVehicle.isSuccess()) {
+                paymentInformationErrorLabel.setVisible(true);
+                paymentInformationErrorLabel.setText(rentVehicle.getResponse());
+                return;
+            } else {
+                confirmationNumberLabel.setText(String.valueOf(rentVehicle.getValue().getRid()));
+            }
+            // }
             
             makeAllPanesInvisible();
             confirmationPaneTitleLabel.setText("Rent Vehicles");
@@ -828,6 +841,7 @@ public class UIController {
                 return;
             } else {
                 DatabaseResponse<String> returnVehicle = Main.database.returnVehicle(rentalID, location, endDateTime, odometer, gasTankIsFull, cost);
+                logResponse(returnVehicle);
                 
                 if (!returnVehicle.isSuccess()) {
                     paymentInformationErrorLabel.setVisible(true);
@@ -886,7 +900,7 @@ public class UIController {
                 return;
             }
             
-            // TODO check if reservation or phone number is valid
+            // check if reservation or phone number is valid
             Reservation reservation;
             DatabaseResponse<Reservation> getReservationFromConfirmationNumber =
                     Main.database.getReservationByConfirmationNumber(rentVehicleConfirmationNumberTextField.getText());
@@ -912,7 +926,8 @@ public class UIController {
                 return;
             }
             
-            DatabaseResponse<Rental> rentalConfirmation = Main.database.rentVehicle(driversLicense, VehicleTypeName.valueOf(vehicleTypeName), location, fromDateTime, endDateTime);
+            DatabaseResponse<Rental> rentalConfirmation = Main.database.rentVehicle(driversLicense, phone, confirmationNumber, VehicleTypeName.valueOf(vehicleTypeName), location, fromDateTime, endDateTime, creditCardNumber, expiryMonth, expiryYear, creditCardType);
+            logResponse(rentalConfirmation);
             if (rentalConfirmation.isSuccess()) {
                 confirmationNumber = String.valueOf(rentalConfirmation.getValue().getRid());
             } else {
@@ -1048,7 +1063,7 @@ public class UIController {
                 returnVehicleStatusErrorLabel.setText("Return date must be after rental start date");
                 return;
             } else {
-                rentalStartDateTime = convertSqlDateToLocalDateTime(rental.getValue().getTimePeriod().getFromDate(),rental.getValue().getTimePeriod().getFromTime());
+                rentalStartDateTime = convertSqlDateToLocalDateTime(rental.getValue().getTimePeriod().getFromDate(), rental.getValue().getTimePeriod().getFromTime());
                 rentalStartDate = rentalStartDateTime.toLocalDate().toString();
                 rentalStartHour = String.valueOf(rentalStartDateTime.getHour() % 12);
                 rentalStartMinute = String.valueOf(rentalStartDateTime.getMinute());
@@ -1117,6 +1132,14 @@ public class UIController {
             if (generateReportTypeBranchTextField.getText().isBlank()) {
                 generateReportErrorLabel.setVisible(true);
                 generateReportErrorLabel.setText("Invalid Branch");
+                return;
+            }
+            
+            DatabaseResponse<Boolean> branchExists = Main.database.locationExists(generateReportTypeBranchTextField.getText());
+            logResponse(branchExists);
+            if (!branchExists.isSuccess()) {
+                generateReportErrorLabel.setVisible(true);
+                generateReportErrorLabel.setText(branchExists.getResponse());
                 return;
             }
             
@@ -1209,21 +1232,21 @@ public class UIController {
         
         LocalDateTime start;
         LocalDateTime end;
-    
+        
         if (isReservation) {
             paymentInformationErrorLabel.setVisible(true);
             paymentInformationErrorLabel.setText("Invalid internal state - please start over");
-    
+            
             customerInformationErrorLabel.setVisible(true);
             customerInformationErrorLabel.setText("Invalid internal state - please start over");
-    
+            
             returnVehicleStatusErrorLabel.setVisible(true);
             returnVehicleStatusErrorLabel.setText("Invalid internal state - please start over");
             return;
         } else if (isRental) {
             start = fromDateTime;
             end = endDateTime;
-        } else if (isReturn){
+        } else if (isReturn) {
             start = rentalStartDateTime;
             end = rentalEndDateTime;
         } else {
