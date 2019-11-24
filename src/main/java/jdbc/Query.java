@@ -20,7 +20,7 @@ public class Query implements Database {
     private static final String USER = "postgres";
     private static final String PASS = "hunter2";
 
-    private static final String ERROR = "Unable to retrieve the requested info";
+    private static final String ERROR = "Unable to retrieve the requested info: SQL ERROR";
     private static final String SUCCESS = "Success";
 
     private static Connection conn;
@@ -53,9 +53,9 @@ public class Query implements Database {
 //    }
 
 
-    private String getResponse(boolean var) {
-        return var ? SUCCESS : ERROR;
-    }
+//    private String getResponse(boolean var) {
+//        return var ? SUCCESS : ERROR;
+//    }
 
     @Override
     public DatabaseResponse<List<Vehicle>> getVehicles(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
@@ -115,10 +115,15 @@ public class Query implements Database {
 
             } catch (SQLException e) {
                 success = false;
+                response = ERROR;
             }
+        } else {
+            response = "invalid location";
         }
-        returnList.removeAll(getRentedVehicles(type, location, from, to));
-        return new VehicleListResponse(query, success, getResponse(success), returnList);
+        List<Vehicle> dQ = getRentedVehicles(type, location, from, to);
+        if (returnList.size() == dQ.size()) {response = "no available vehicles";}
+        returnList.removeAll(dQ);
+        return new VehicleListResponse(query, success, response, returnList);
     }
 
     private List<Vehicle> getRentedVehicles(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
@@ -215,11 +220,12 @@ public class Query implements Database {
     public DatabaseResponse<Boolean> locationExists(String location) {
         boolean ret = false;
         boolean success = true;
+        String response = SUCCESS;
         String query = "SELECT b.*\n" +
                 "FROM public.branch b\n" +
                 "WHERE b.location = ?";
         if (location == null || location.equals("")) {
-            return new BooleanResponse(query, true, getResponse(true), true);
+            return new BooleanResponse(query, true, response, true);
         }
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
@@ -230,16 +236,17 @@ public class Query implements Database {
             resultSet.close();
             stmt.close();
         } catch (SQLException e) {
-            //StackTrace();
+            response = ERROR;
             success = false;
         }
-        return new BooleanResponse(query, success, getResponse(ret), ret);
+        return new BooleanResponse(query, success, response, ret);
     }
 
     @Override
     public DatabaseResponse<Boolean> branchExists(String location, String city) {
         boolean ret = false;
         boolean success = true;
+        String response = SUCCESS;
         String query = "SELECT b.*\n" +
                 "FROM public.branch b\n" +
                 "WHERE b.location = ? and b.city = ?";
@@ -256,11 +263,12 @@ public class Query implements Database {
             //StackTrace();
             success = false;
         }
-        return new BooleanResponse(query, success, getResponse(ret), ret);
+        return new BooleanResponse(query, success, response, ret);
     }
 
     @Override
     public DatabaseResponse<Boolean> customerExists(String driversLicense) {
+        String response = SUCCESS;
         boolean success = true;
         boolean ret = false;
         String query = "SELECT c.dlicense\n" +
@@ -275,13 +283,15 @@ public class Query implements Database {
             resultSet.close();
             stmt.close();
         } catch (SQLException e) {
+            response = ERROR;
             success = false;
         }
-        return new BooleanResponse(query, success, getResponse(ret), ret);
+        return new BooleanResponse(query, success, response, ret);
     }
 
     @Override
     public DatabaseResponse<Customer> getCustomer(String driversLicense) {
+        String response = SUCCESS;
         Customer ret = null;
         boolean success;
         String query = "SELECT c.*\n" +
@@ -303,8 +313,9 @@ public class Query implements Database {
             stmt.close();
         } catch (SQLException e) {
             success = false;
+            response = ERROR;
         }
-        return new CustomerResponse(query, success, getResponse(success), ret);
+        return new CustomerResponse(query, success, response, ret);
     }
 
     private Customer getCustomer(Long phoneNumber) {
@@ -353,6 +364,7 @@ public class Query implements Database {
     @Override
     public DatabaseResponse<Reservation> reserveVehicle(String driversLicense, String phoneNumber, VehicleTypeName type,
                                                         String location, LocalDateTime from, LocalDateTime to) {
+        String response = SUCCESS;
         boolean success = customerExists(driversLicense).getValue();
         String query = "insert into public.reservation (vtname, cellphone, fromdate, fromtime, todate, totime) values (?,?,?,?,?,?)";
         if (success) {
@@ -367,13 +379,16 @@ public class Query implements Database {
                 query = stmt.toString();
                 success = stmt.executeUpdate() > 0;
                 stmt.close();
-                return new ReservationResponse(query, success, String.valueOf(getReservationByPhoneNumber(phoneNumber).getValue().getConfNo())
-                        , getReservationByPhoneNumber(phoneNumber).getValue());
+                response = "Your confno is : " +
+                        getReservationByPhoneNumber(phoneNumber).getValue().getConfNo();
+                return new ReservationResponse(query, success, response, getReservationByPhoneNumber(phoneNumber).getValue());
             } catch (SQLException e) {
-                //
+                response = ERROR;
             }
+        } else {
+            response = "customer does not exist";
         }
-        return new ReservationResponse(query, false, ERROR, null);
+        return new ReservationResponse(query, false, response, null);
     }
 
     private String getReservationNumber(VehicleTypeName type, String dlicense, LocalDateTime from, LocalDateTime to) {
@@ -410,6 +425,7 @@ public class Query implements Database {
 
     @Override
     public DatabaseResponse<Reservation> getReservationByConfirmationNumber(String confirmationNumber) {
+        String response = SUCCESS;
         Reservation res = null;
         String query = "SELECT  r.* \n" +
                 "FROM public.reservation r \n" +
@@ -436,13 +452,17 @@ public class Query implements Database {
             rs.close();
             stmt.close();
         } catch (SQLException e) {
-            //
+            response = ERROR;
         }
-        return new ReservationResponse(query, res != null, getResponse(res != null), res);
+        if (response.equals(SUCCESS)) {
+            response = res == null ? "could not retrieve the reservation" : SUCCESS;
+        }
+        return new ReservationResponse(query, res != null, response, res);
     }
 
     @Override
     public DatabaseResponse<Reservation> getReservationByPhoneNumber(String phoneNumber) {
+        String response = SUCCESS;
         Reservation res = null;
         String query = "SELECT  r.* \n" +
                 "FROM public.reservation r \n" +
@@ -469,9 +489,12 @@ public class Query implements Database {
             rs.close();
             stmt.close();
         } catch (SQLException e) {
-            //
+            response = ERROR;
         }
-        return new ReservationResponse(query, res != null, getResponse(res != null), res);
+        if (response.equals(SUCCESS)) {
+            response = res == null ? "could not retrieve the reservation" : SUCCESS;
+        }
+        return new ReservationResponse(query, res != null, response, res);
     }
 
     @Override
@@ -511,7 +534,7 @@ public class Query implements Database {
                 stmt.close();
             } catch (SQLException e) {
                 success = false;
-                response = "query failed";
+                response = ERROR;
             }
         } else {
             response = "invalid location or no available vehicles";
@@ -575,6 +598,7 @@ public class Query implements Database {
 
     @Override
     public DatabaseResponse<Rental> getRental(String id) {
+        String response = SUCCESS;
         Rental rental = null;
         String query = "SELECT  r.* \n" +
                 "FROM public.rent r \n" +
@@ -606,14 +630,16 @@ public class Query implements Database {
             rs.close();
             stmt.close();
         } catch (SQLException e) {
-            //
+            response = ERROR;
         }
-        return new RentalResponse(query, rental != null, getResponse(rental != null), rental);
+        return new RentalResponse(query, rental != null, response, rental);
 
     }
 
     @Override
     public VehicleResponse getVehicle(String vlicense) {
+        String response = SUCCESS;
+        boolean success = true;
         String query = "SELECT v.* \n" +
                 "FROM public.vehicle v" +
                 "WHERE v.vlicence = ?";
@@ -631,23 +657,24 @@ public class Query implements Database {
                         rs.getString("make"), rs.getString("model"),
                         rs.getString("year"), rs.getString("color"),
                         rs.getInt("odomoter"), status, null, vehicleTypeName);
-                return new VehicleResponse(query, true, getResponse(true), returnV);
+                return new VehicleResponse(query, true, response, returnV);
             }
             rs.close();
             stmt.close();
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            success = false;
+            response = ERROR;
         }
-
-        return new VehicleResponse(query, false, getResponse(false), null);
+        if (success) {response = "did not find vehicle";}
+        return new VehicleResponse(query, success, response, null);
     }
 
     @Override
     public DatabaseResponse<String> returnVehicle(String rentalID, String location, LocalDateTime time, String odometer,
                                                   boolean gasTankIsFull, int cost) {
         boolean success = locationExists(location).getValue();
-
+        String response = SUCCESS;
         // UPDATE VEHICLE STATUS
         Vehicle v = getVehicle(getRental(rentalID).getValue().getVehicle().getvLicense()).getValue();
         updateVehicleStatus(v, v.getStatus());
@@ -666,8 +693,10 @@ public class Query implements Database {
             stmt.close();
         } catch (SQLException e) {
             success = false;
+            response = ERROR;
         }
-        return new StringResponse(query, success, getResponse(success), getResponse(success));
+        if (success) {response = "cannot return this vehicle";}
+        return new StringResponse(query, success, response, response);
     }
 
     @Override
@@ -723,6 +752,7 @@ public class Query implements Database {
     }
 
     private IntegerResponse getAllRates(VehicleTypeName type, String rateVar) {
+        //String response = SUCCESS;
         String query = "SELECT vt." + rateVar + "\n" +
                 "FROM public.vehicletype vt \n" +
                 "WHERE vt.vtname = ?\n" +
@@ -731,13 +761,14 @@ public class Query implements Database {
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setString(1, type.getName());
+            query = stmt.toString();
             ResultSet rs = stmt.executeQuery();
             int ret = rs.getInt(rateVar);
             rs.close();
             stmt.close();
-            return new IntegerResponse(query, true, getResponse(true), ret);
+            return new IntegerResponse(query, true, SUCCESS, ret);
         } catch (SQLException e) {
-            return new IntegerResponse(query, false, getResponse(false), -1);
+            return new IntegerResponse(query, false, ERROR, -1);
         }
     }
 
