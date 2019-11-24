@@ -9,13 +9,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import model.Rental;
+import model.Reservation;
 import model.Vehicle;
 import model.VehicleTypeName;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDate;
@@ -54,17 +55,23 @@ public class UIController {
     static String expiryYear;
     static String creditCardType;
     static boolean paidWithCash;
+    static int cost;
     
     static String confirmationNumber;
-    static String estimatedCost;
     
     static String rentalID;
+    static String rentalStartDate;
+    static String rentalStartHour;
+    static String rentalStartMinute;
+    static String rentalStartPeriod;
     static String rentalEndDate;
-    static String rentalEndTimeHour;
-    static String rentalEndTimeMinute;
-    static String rentalEndTimePeriod;
+    static String rentalEndHour;
+    static String rentalEndMinute;
+    static String rentalEndPeriod;
     static String odometer;
     static boolean gasTankIsFull;
+    static LocalDateTime rentalStartDateTime;
+    static LocalDateTime rentalEndDateTime;
     
     @FXML
     StackPane globalPane;
@@ -618,8 +625,14 @@ public class UIController {
             return;
         }
         
-        if (!customerInformationPhoneTextField.getText().matches("(\\d|[^a-zA-z])+")) {
-            customerInformationErrorLabel.setText("Invalid Phone Number");
+        if (!customerInformationPhoneTextField.getText().trim().matches("\\d+")) {
+            customerInformationErrorLabel.setText("Invalid Phone Number Format");
+            customerInformationErrorLabel.setVisible(true);
+            return;
+        }
+        
+        if (customerInformationPhoneTextField.getText().trim().length() != 10) {
+            customerInformationErrorLabel.setText("Invalid Phone Number Length");
             customerInformationErrorLabel.setVisible(true);
             return;
         }
@@ -649,86 +662,10 @@ public class UIController {
             }
         }
         
-        long weeks = fromDateTime.until(endDateTime, ChronoUnit.DAYS) / 7;
-        long days = fromDateTime.until(endDateTime, ChronoUnit.DAYS) % 7;
-        long hours = fromDateTime.until(endDateTime, ChronoUnit.HOURS) - weeks * 7 * 24 - days * 24 + 1;
-        
-        // get rates from database
-        if (!vehicleTypeName.equalsIgnoreCase("Any")) {
-            DatabaseResponse<Integer> hourlyRateResponse = Main.database.getHourlyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));
-            logResponse(hourlyRateResponse);
-            DatabaseResponse<Integer> dailyRateResponse = Main.database.getDailyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));
-            logResponse(dailyRateResponse);
-            DatabaseResponse<Integer> weeklyRateResponse = Main.database.getWeeklyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));
-            logResponse(weeklyRateResponse);
-            
-            if (!hourlyRateResponse.isSuccess() || !dailyRateResponse.isSuccess() || !weeklyRateResponse.isSuccess()) {
-                customerInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
-                customerInformationErrorLabel.setVisible(true);
-                return;
-            }
-            
-            int hourlyRate = hourlyRateResponse.getValue();
-            int dailyRate = dailyRateResponse.getValue();
-            int weeklyRate = weeklyRateResponse.getValue();
-            
-            String costBreakdown = "$" + (weeklyRate * weeks + dailyRate * dailyRate + hourlyRate * hours) + "\n" +
-                    "(" +
-                    weeks + " weeks * " + "$ " + weeklyRate + "/week + " +
-                    days + " days * " + "$ " + dailyRate + "/day" +
-                    hours + " hours * " + "$ " + hourlyRate + "/hour" +
-                    ")";
-            confirmationEstimatedCostLabel.setText(costBreakdown);
-        } else {
-            Map<VehicleTypeName, List<DatabaseResponse<Integer>>> rates =
-                    Arrays.stream(VehicleTypeName.values()).collect(
-                            Collectors.toMap(t -> t, t -> List.of(
-                                    CompletableFuture.supplyAsync(() -> Main.database.getHourlyRate(t)).join(),
-                                    CompletableFuture.supplyAsync(() -> Main.database.getDailyRate(t)).join(),
-                                    CompletableFuture.supplyAsync(() -> Main.database.getWeeklyRate(t)).join()
-                                    ),
-                                    (a, b) -> b));
-            
-            rates.values().stream().flatMap(Collection::stream).forEach(this::logResponse);
-            
-            if (rates.values().stream().flatMap(Collection::stream).anyMatch(r -> !r.isSuccess())) {
-                customerInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
-                customerInformationErrorLabel.setVisible(true);
-                return;
-            }
-            
-            
-            Map<VehicleTypeName, Integer> computedCosts = rates.keySet().stream().collect(
-                    Collectors.toMap(t -> t, t ->
-                            rates.get(t).get(0).getValue() * (int) hours +
-                                    rates.get(t).get(1).getValue() * (int) days +
-                                    rates.get(t).get(2).getValue() * (int) weeks)
-            );
-            
-            int minComputedCost = computedCosts.values().stream().reduce((a, b) -> a < b ? a : b).get();
-            int maxComputedCost = computedCosts.values().stream().reduce((a, b) -> a > b ? a : b).get();
-            
-            VehicleTypeName minCostVehicleType = computedCosts.keySet()
-                    .stream()
-                    .filter(k -> computedCosts.get(k) == minComputedCost).limit(1).findFirst().get();
-            VehicleTypeName maxCostVehicleType = computedCosts.keySet()
-                    .stream()
-                    .filter(k -> computedCosts.get(k) == minComputedCost).limit(1).findFirst().get();
-            
-            String costBreakdown = "$" + minComputedCost + " - " + "$" + maxComputedCost + "\n\n" +
-                    "Minimum cost " + "(" + minCostVehicleType.getName() + "):\n" +
-                    weeks + " weeks * " + "$" + rates.get(minCostVehicleType).get(2).getValue() + "/week\n" +
-                    days + " days * " + "$" + rates.get(minCostVehicleType).get(1).getValue() + "/day\n" +
-                    hours + " hours * " + "$" + rates.get(minCostVehicleType).get(0).getValue() + "/hour" + "\n\n" +
-                    "Maximum cost " + "(" + maxCostVehicleType.getName() + "):\n" +
-                    weeks + " weeks * " + "$" + rates.get(minCostVehicleType).get(2).getValue() + "/week\n" +
-                    days + " days * " + "$" + rates.get(minCostVehicleType).get(1).getValue() + "/day\n" +
-                    hours + " hours * " + "$" + rates.get(minCostVehicleType).get(0).getValue() + "/hour" + "\n";
-            confirmationEstimatedCostLabel.setText(costBreakdown);
-        }
+        computeCost();
         
         if (isReservation) {
-            DatabaseResponse<String> confirmationNumber = Main.database.reserveVehicle(
+            DatabaseResponse<Reservation> confirmationNumber = Main.database.reserveVehicle(driversLicense,
                     vehicleTypeName.equalsIgnoreCase("any") ?
                             null :
                             VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()),
@@ -743,7 +680,7 @@ public class UIController {
                 return;
             }
             
-            confirmationNumberLabel.setText(confirmationNumber.getValue());
+            confirmationNumberLabel.setText(String.valueOf(confirmationNumber.getValue().getConfNo()));
             confirmationCustomerNameLabel.setText(name);
             confirmationDriversLicenseLabel.setText(driversLicense);
             confirmationVehicleTypeLabel.setText(vehicleTypeName);
@@ -757,6 +694,30 @@ public class UIController {
             confirmationTitledPane.setText("Reservation Complete");
             confirmationPane.setVisible(true);
         } else if (isRental) {
+            DatabaseResponse<Boolean> customerExists = Main.database.customerExists(driversLicense);
+            logResponse(customerExists);
+            
+            if (customerExists.isSuccess()) {
+                if (customerExists.getValue()) {
+                    customerInformationErrorLabel.setText("Customer already exists");
+                    customerInformationErrorLabel.setVisible(true);
+                    return;
+                } else {
+                    DatabaseResponse<?> addCustomer = Main.database.addCustomer(phone, name, address, driversLicense);
+                    logResponse(addCustomer);
+                    
+                    if (!addCustomer.isSuccess()) {
+                        customerInformationErrorLabel.setText("Unable to add customer - please start over");
+                        customerInformationErrorLabel.setVisible(true);
+                        return;
+                    }
+                }
+            } else {
+                customerInformationErrorLabel.setText(customerExists.getResponse());
+                customerInformationErrorLabel.setVisible(true);
+                return;
+            }
+            
             // TODO get payment information
             // TODO generate confirmation number
             // TODO move to payment
@@ -828,20 +789,55 @@ public class UIController {
         }
         
         if (isRental) {
+            computeCost();
+            
+            if (vehicleTypeName.equalsIgnoreCase("Any")) {
+                paymentInformationErrorLabel.setVisible(true);
+                paymentInformationErrorLabel.setText("Invalid internal state - please start over.");
+                return;
+            } else {
+                DatabaseResponse<Rental> rentVehicle = Main.database.rentVehicle(driversLicense, VehicleTypeName.valueOf(vehicleTypeName), location, fromDateTime, endDateTime);
+                
+                if (!rentVehicle.isSuccess()) {
+                    paymentInformationErrorLabel.setVisible(true);
+                    paymentInformationErrorLabel.setText(rentVehicle.getResponse());
+                    return;
+                } else {
+                    confirmationNumberLabel.setText(String.valueOf(rentVehicle.getValue().getRid()));
+                }
+            }
+            
             makeAllPanesInvisible();
             confirmationPaneTitleLabel.setText("Rent Vehicles");
             confirmationTitledPane.setText("Rental Complete");
             confirmationPane.setVisible(true);
             
-            // TODO
             // query db to set rental
             // get confirmation number, estimated cost
             confirmationCustomerNameLabel.setText(name);
             confirmationDriversLicenseLabel.setText(driversLicense);
             confirmationVehicleTypeLabel.setText(vehicleTypeName);
             confirmationLocationLabel.setText(location);
-            // TODO
+            // confirmationEstimatedCostLabel.setText(String.valueOf(cost));
         } else if (isReturn) {
+            computeCost();
+            
+            if (vehicleTypeName.equalsIgnoreCase("Any")) {
+                paymentInformationErrorLabel.setVisible(true);
+                paymentInformationErrorLabel.setText("Invalid internal state - please start over.");
+                return;
+            } else {
+                DatabaseResponse<String> returnVehicle = Main.database.returnVehicle(rentalID, location, endDateTime, odometer, gasTankIsFull, cost);
+                
+                if (!returnVehicle.isSuccess()) {
+                    paymentInformationErrorLabel.setVisible(true);
+                    paymentInformationErrorLabel.setText(returnVehicle.getResponse());
+                    return;
+                } else {
+                    confirmationNumberLabel.setText(returnVehicle.getValue());
+                }
+            }
+            
             makeAllPanesInvisible();
             confirmationPaneTitleLabel.setText("Return Vehicles");
             confirmationTitledPane.setText("Return Complete");
@@ -852,7 +848,7 @@ public class UIController {
             confirmationDriversLicenseLabel.setText(driversLicense);
             confirmationVehicleTypeLabel.setText(vehicleTypeName);
             confirmationLocationLabel.setText(location);
-            // TODO calculate estimated cost + BREAKDOWN
+            // confirmationEstimatedCostLabel.setText(String.valueOf(cost));
         } else {
             paymentInformationErrorLabel.setVisible(true);
             paymentInformationErrorLabel.setText("Something went wrong - please start over.");
@@ -891,6 +887,39 @@ public class UIController {
             }
             
             // TODO check if reservation or phone number is valid
+            Reservation reservation;
+            DatabaseResponse<Reservation> getReservationFromConfirmationNumber =
+                    Main.database.getReservationByConfirmationNumber(rentVehicleConfirmationNumberTextField.getText());
+            DatabaseResponse<Reservation> getReservationFromPhone =
+                    Main.database.getReservationByPhoneNumber(rentVehicleConfirmationNumberTextField.getText());
+            logResponse(getReservationFromConfirmationNumber);
+            logResponse(getReservationFromPhone);
+            if (getReservationFromConfirmationNumber.isSuccess()) {
+                reservation = getReservationFromConfirmationNumber.getValue();
+                phone = String.valueOf(reservation.getCustomer().getCellPhone());
+                name = reservation.getCustomer().getName();
+                address = reservation.getCustomer().getAddress();
+                driversLicense = reservation.getCustomer().getDlicense();
+            } else if (getReservationFromPhone.isSuccess()) {
+                reservation = getReservationFromPhone.getValue();
+                phone = String.valueOf(reservation.getCustomer().getCellPhone());
+                name = reservation.getCustomer().getName();
+                address = reservation.getCustomer().getAddress();
+                driversLicense = reservation.getCustomer().getDlicense();
+            } else {
+                rentVehicleInitialErrorLabel.setVisible(true);
+                rentVehicleInitialErrorLabel.setText("Unknown reservation or phone number");
+                return;
+            }
+            
+            DatabaseResponse<Rental> rentalConfirmation = Main.database.rentVehicle(driversLicense, VehicleTypeName.valueOf(vehicleTypeName), location, fromDateTime, endDateTime);
+            if (rentalConfirmation.isSuccess()) {
+                confirmationNumber = String.valueOf(rentalConfirmation.getValue().getRid());
+            } else {
+                rentVehicleInitialErrorLabel.setVisible(true);
+                rentVehicleInitialErrorLabel.setText(rentalConfirmation.getResponse());
+                return;
+            }
         }
         
         rentVehicleInitialErrorLabel.setVisible(false);
@@ -995,6 +1024,53 @@ public class UIController {
             return;
         }
         
+        rentalID = returnVehicleStatusRentalIDTextField.getText();
+        rentalEndDate = returnVehicleRentalEndDatePicker.getValue().toString();
+        rentalEndHour = returnVehicleEndHourTextField.getText();
+        rentalEndMinute = returnVehicleEndMinuteTextField.getText();
+        rentalEndPeriod = returnVehiclePeriodComboBox.getSelectionModel().getSelectedItem();
+        
+        int hour = Integer.parseInt(rentalEndHour) % 12;
+        hour = hour + (startTimePeriod.equals("am") ? 0 : 12);
+        hour = hour % 24;
+        int minute = Integer.parseInt(rentalEndMinute);
+        
+        rentalEndDateTime = returnVehicleRentalEndDatePicker.getValue().atTime(hour, minute);
+        DatabaseResponse<Rental> rental = Main.database.getRental(rentalID);
+        logResponse(rental);
+        
+        if (rental.isSuccess()) {
+            if (rentalEndDateTime.isBefore(
+                    convertSqlDateToLocalDateTime(
+                            rental.getValue().getTimePeriod().getFromDate(),
+                            rental.getValue().getTimePeriod().getFromTime()))) {
+                returnVehicleStatusErrorLabel.setVisible(true);
+                returnVehicleStatusErrorLabel.setText("Return date must be after rental start date");
+                return;
+            } else {
+                rentalStartDateTime = convertSqlDateToLocalDateTime(rental.getValue().getTimePeriod().getFromDate(),rental.getValue().getTimePeriod().getFromTime());
+                rentalStartDate = rentalStartDateTime.toLocalDate().toString();
+                rentalStartHour = String.valueOf(rentalStartDateTime.getHour() % 12);
+                rentalStartMinute = String.valueOf(rentalStartDateTime.getMinute());
+                rentalStartPeriod = rentalStartDateTime.getHour() >= 12 ? "am" : "pm";
+                
+                computeCost();
+                
+                DatabaseResponse<String> returnVehicle = Main.database.returnVehicle(rentalID, location, rentalEndDateTime, odometer, gasTankIsFull, cost);
+                logResponse(returnVehicle);
+                if (returnVehicle.isSuccess()) {
+                    confirmationNumberLabel.setText(returnVehicle.getValue());
+                } else {
+                    returnVehicleStatusErrorLabel.setVisible(true);
+                    returnVehicleStatusErrorLabel.setText("Something went wrong when returning the vehicle - please start over");
+                    return;
+                }
+            }
+        } else {
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Rental does not exist");
+            return;
+        }
         
         // TODO
         // get details for rental
@@ -1047,15 +1123,19 @@ public class UIController {
             generateReportErrorLabel.setVisible(false);
             if (generateReportTypeComboBox.getValue().contains("Rentals")) {
                 response = Main.database.generateDailyBranchRentalReport(generateReportTypeBranchTextField.getText());
+                logResponse(response);
             } else {
                 response = Main.database.generateDailyBranchReturnReport(generateReportTypeBranchTextField.getText());
+                logResponse(response);
             }
         } else {
             generateReportErrorLabel.setVisible(false);
             if (generateReportTypeComboBox.getValue().contains("Rentals")) {
                 response = Main.database.generateDailyRentalReport();
+                logResponse(response);
             } else {
                 response = Main.database.generateDailyReturnReport();
+                logResponse(response);
             }
         }
         
@@ -1078,6 +1158,7 @@ public class UIController {
         }
         
         DatabaseResponse<?> response = Main.database.sendQuery(viewEditDatabaseQueryTextArea.getText());
+        logResponse(response);
         viewEditDatabaseResultTitledPane.setVisible(true);
         viewEditDatabaseResultText.setText(response.getResponse());
     }
@@ -1119,6 +1200,135 @@ public class UIController {
     
     private LocalDateTime convertSqlDateToLocalDateTime(java.sql.Date date, java.sql.Time time) {
         return date.toLocalDate().atTime(time.toLocalTime());
+    }
+    
+    private void computeCost() {
+        paymentInformationErrorLabel.setVisible(false);
+        customerInformationErrorLabel.setVisible(false);
+        returnVehicleStatusErrorLabel.setVisible(false);
+        
+        LocalDateTime start;
+        LocalDateTime end;
+    
+        if (isReservation) {
+            paymentInformationErrorLabel.setVisible(true);
+            paymentInformationErrorLabel.setText("Invalid internal state - please start over");
+    
+            customerInformationErrorLabel.setVisible(true);
+            customerInformationErrorLabel.setText("Invalid internal state - please start over");
+    
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Invalid internal state - please start over");
+            return;
+        } else if (isRental) {
+            start = fromDateTime;
+            end = endDateTime;
+        } else if (isReturn){
+            start = rentalStartDateTime;
+            end = rentalEndDateTime;
+        } else {
+            paymentInformationErrorLabel.setVisible(true);
+            paymentInformationErrorLabel.setText("Invalid internal state - please start over");
+            
+            customerInformationErrorLabel.setVisible(true);
+            customerInformationErrorLabel.setText("Invalid internal state - please start over");
+            
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Invalid internal state - please start over");
+            return;
+        }
+        
+        long weeks = start.until(end, ChronoUnit.DAYS) / 7;
+        long days = start.until(end, ChronoUnit.DAYS) % 7;
+        long hours = start.until(end, ChronoUnit.HOURS) - weeks * 7 * 24 - days * 24 + 1;
+        
+        // get rates from database
+        if (!vehicleTypeName.equalsIgnoreCase("Any")) {
+            DatabaseResponse<Integer> hourlyRateResponse = Main.database.getHourlyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));
+            logResponse(hourlyRateResponse);
+            DatabaseResponse<Integer> dailyRateResponse = Main.database.getDailyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));
+            logResponse(dailyRateResponse);
+            DatabaseResponse<Integer> weeklyRateResponse = Main.database.getWeeklyRate(VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()));
+            logResponse(weeklyRateResponse);
+            
+            if (!hourlyRateResponse.isSuccess() || !dailyRateResponse.isSuccess() || !weeklyRateResponse.isSuccess()) {
+                if (rentVehicleNewCustomerRadioButton.isSelected()) {
+                    paymentInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
+                    paymentInformationErrorLabel.setVisible(true);
+                    return;
+                } else {
+                    customerInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
+                    customerInformationErrorLabel.setVisible(true);
+                    return;
+                }
+            }
+            
+            int hourlyRate = hourlyRateResponse.getValue();
+            int dailyRate = dailyRateResponse.getValue();
+            int weeklyRate = weeklyRateResponse.getValue();
+            int computedCost = (int) (weeklyRate * weeks + dailyRate * dailyRate + hourlyRate * hours);
+            
+            String costBreakdown = "$" + computedCost + "\n" +
+                    "(" +
+                    weeks + " weeks * " + "$ " + weeklyRate + "/week\n" +
+                    days + " days * " + "$ " + dailyRate + "/day\n" +
+                    hours + " hours * " + "$ " + hourlyRate + "/hour" +
+                    ")";
+            confirmationEstimatedCostLabel.setText(costBreakdown);
+            cost = computedCost;
+        } else {
+            Map<VehicleTypeName, List<DatabaseResponse<Integer>>> rates =
+                    Arrays.stream(VehicleTypeName.values()).collect(
+                            Collectors.toMap(t -> t, t -> List.of(
+                                    CompletableFuture.supplyAsync(() -> Main.database.getHourlyRate(t)).join(),
+                                    CompletableFuture.supplyAsync(() -> Main.database.getDailyRate(t)).join(),
+                                    CompletableFuture.supplyAsync(() -> Main.database.getWeeklyRate(t)).join()
+                                    ),
+                                    (a, b) -> b));
+            
+            rates.values().stream().flatMap(Collection::stream).forEach(this::logResponse);
+            
+            if (rates.values().stream().flatMap(Collection::stream).anyMatch(r -> !r.isSuccess())) {
+                if (rentVehicleNewCustomerRadioButton.isSelected()) {
+                    paymentInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
+                    paymentInformationErrorLabel.setVisible(true);
+                    return;
+                } else {
+                    customerInformationErrorLabel.setText("Unable to retrieve one or more rental rates - please start over.");
+                    customerInformationErrorLabel.setVisible(true);
+                    return;
+                }
+            }
+            
+            Map<VehicleTypeName, Integer> computedCosts = rates.keySet().stream().collect(
+                    Collectors.toMap(t -> t, t ->
+                            rates.get(t).get(0).getValue() * (int) hours +
+                                    rates.get(t).get(1).getValue() * (int) days +
+                                    rates.get(t).get(2).getValue() * (int) weeks)
+            );
+            
+            int minComputedCost = computedCosts.values().stream().reduce((a, b) -> a < b ? a : b).get();
+            int maxComputedCost = computedCosts.values().stream().reduce((a, b) -> a > b ? a : b).get();
+            
+            VehicleTypeName minCostVehicleType = computedCosts.keySet()
+                    .stream()
+                    .filter(k -> computedCosts.get(k) == minComputedCost).limit(1).findFirst().get();
+            VehicleTypeName maxCostVehicleType = computedCosts.keySet()
+                    .stream()
+                    .filter(k -> computedCosts.get(k) == minComputedCost).limit(1).findFirst().get();
+            
+            String costBreakdown = "$" + minComputedCost + " - " + "$" + maxComputedCost + "\n\n" +
+                    "Minimum cost " + "(" + minCostVehicleType.getName() + "):\n" +
+                    weeks + " weeks * " + "$" + rates.get(minCostVehicleType).get(2).getValue() + "/week\n" +
+                    days + " days * " + "$" + rates.get(minCostVehicleType).get(1).getValue() + "/day\n" +
+                    hours + " hours * " + "$" + rates.get(minCostVehicleType).get(0).getValue() + "/hour" + "\n\n" +
+                    "Maximum cost " + "(" + maxCostVehicleType.getName() + "):\n" +
+                    weeks + " weeks * " + "$" + rates.get(minCostVehicleType).get(2).getValue() + "/week\n" +
+                    days + " days * " + "$" + rates.get(minCostVehicleType).get(1).getValue() + "/day\n" +
+                    hours + " hours * " + "$" + rates.get(minCostVehicleType).get(0).getValue() + "/hour" + "\n";
+            confirmationEstimatedCostLabel.setText(costBreakdown);
+            cost = maxComputedCost;
+        }
     }
     
     private void logResponse(DatabaseResponse<?> response) {

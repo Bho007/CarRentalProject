@@ -759,62 +759,66 @@
                         </HBox>
                         <TitledPane fx:id="confirmationTitledPane" animated="false" collapsible="false" text="Reservation Complete" VBox.vgrow="ALWAYS">
                            <content>
-                              <AnchorPane minHeight="0.0" minWidth="0.0">
-                                 <children>
-                                    <VBox spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                              <ScrollPane>
+                                 <content>
+                                    <AnchorPane minHeight="0.0" minWidth="0.0">
                                        <children>
-                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0">
+                                          <VBox spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
                                              <children>
-                                                <Label text="Confirmation Number:" />
-                                                <Label fx:id="confirmationNumberLabel" layoutX="10.0" layoutY="10.0" />
+                                                <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0">
+                                                   <children>
+                                                      <Label text="Confirmation Number:" />
+                                                      <Label fx:id="confirmationNumberLabel" layoutX="10.0" layoutY="10.0" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0">
+                                                   <children>
+                                                      <Label text="Customer Name:" />
+                                                      <Label fx:id="confirmationCustomerNameLabel" layoutX="10.0" layoutY="10.0" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="31.0" spacing="5.0">
+                                                   <children>
+                                                      <Label text="Driver's License:" />
+                                                      <Label fx:id="confirmationDriversLicenseLabel" layoutX="10.0" layoutY="10.0" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" spacing="5.0">
+                                                   <children>
+                                                      <Label text="Vehicle type:" />
+                                                      <Label fx:id="confirmationVehicleTypeLabel" layoutX="10.0" layoutY="10.0" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="32.0" spacing="5.0">
+                                                   <children>
+                                                      <Label text="Location:" />
+                                                      <Label fx:id="confirmationLocationLabel" layoutX="10.0" layoutY="10.0" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox layoutX="10.0" layoutY="98.0" spacing="5.0">
+                                                   <children>
+                                                      <Label text="Estimated cost:" />
+                                                      <Label fx:id="confirmationEstimatedCostLabel" layoutX="10.0" layoutY="10.0" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0" visible="false">
+                                                   <children>
+                                                      <Label text="Pickup at:" />
+                                                      <Label fx:id="confirmationPickupLabel" layoutX="10.0" layoutY="10.0" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="32.0" spacing="5.0" visible="false">
+                                                   <children>
+                                                      <Label text="Return by:" />
+                                                      <Label fx:id="confirmationReturnLabel" layoutX="10.0" layoutY="10.0" />
+                                                   </children>
+                                                </HBox>
                                              </children>
-                                          </HBox>
-                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0">
-                                             <children>
-                                                <Label text="Customer Name:" />
-                                                <Label fx:id="confirmationCustomerNameLabel" layoutX="10.0" layoutY="10.0" />
-                                             </children>
-                                          </HBox>
-                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="31.0" spacing="5.0">
-                                             <children>
-                                                <Label text="Driver's License:" />
-                                                <Label fx:id="confirmationDriversLicenseLabel" layoutX="10.0" layoutY="10.0" />
-                                             </children>
-                                          </HBox>
-                                          <HBox alignment="CENTER_LEFT" spacing="5.0">
-                                             <children>
-                                                <Label text="Vehicle type:" />
-                                                <Label fx:id="confirmationVehicleTypeLabel" layoutX="10.0" layoutY="10.0" />
-                                             </children>
-                                          </HBox>
-                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="32.0" spacing="5.0">
-                                             <children>
-                                                <Label text="Location:" />
-                                                <Label fx:id="confirmationLocationLabel" layoutX="10.0" layoutY="10.0" />
-                                             </children>
-                                          </HBox>
-                                          <HBox layoutX="10.0" layoutY="98.0" spacing="5.0">
-                                             <children>
-                                                <Label text="Estimated cost:" />
-                                                <Label fx:id="confirmationEstimatedCostLabel" layoutX="10.0" layoutY="10.0" />
-                                             </children>
-                                          </HBox>
-                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0" visible="false">
-                                             <children>
-                                                <Label text="Pickup at:" />
-                                                <Label fx:id="confirmationPickupLabel" layoutX="10.0" layoutY="10.0" />
-                                             </children>
-                                          </HBox>
-                                          <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="32.0" spacing="5.0" visible="false">
-                                             <children>
-                                                <Label text="Return by:" />
-                                                <Label fx:id="confirmationReturnLabel" layoutX="10.0" layoutY="10.0" />
-                                             </children>
-                                          </HBox>
+                                          </VBox>
                                        </children>
-                                    </VBox>
-                                 </children>
-                              </AnchorPane>
+                                    </AnchorPane>
+                                 </content>
+                              </ScrollPane>
                            </content>
                         </TitledPane>
                         <HBox alignment="CENTER_LEFT" spacing="5.0">
