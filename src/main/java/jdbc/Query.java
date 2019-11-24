@@ -5,14 +5,8 @@ package jdbc;
 import main.Database;
 import main.DatabaseResponse;
 import model.*;
-
-import javax.swing.text.DateFormatter;
-import java.math.BigInteger;
 import java.sql.*;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -486,7 +480,7 @@ public class Query implements Database {
         } catch (SQLException e) {
             response = ERROR;
         }
-        if (response.equals(SUCCESS)) {
+        if (response.equals(ERROR)) {
             response = res == null ? "could not retrieve the reservation" : SUCCESS;
         }
         return new ReservationResponse(query, res != null, response, res);
@@ -530,7 +524,7 @@ public class Query implements Database {
     }
 
     @Override
-    public DatabaseResponse<Rental> rentVehicle(String driversLicense, String phone, String confirmatioNumber,
+    public DatabaseResponse<Rental> rentVehicle(String driversLicense, String phone, String confirmationNumber,
                                                 VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to,
                                                 String creditCardNumber, String expiryMonth, String expiryYear, String creditCardType) {
         String response = SUCCESS;
@@ -555,16 +549,18 @@ public class Query implements Database {
                 stmt.setLong(8, Long.parseLong(creditCardNumber));
                 LocalDateTime ldt = LocalDateTime.of(Integer.parseInt(expiryYear), Integer.parseInt(expiryMonth), 1, 4, 5);
                 stmt.setDate(9, Date.valueOf(ldt.toLocalDate()));
-                stmt.setInt(10, Integer.parseInt(confirmatioNumber));
+                stmt.setInt(10, Integer.parseInt(confirmationNumber));
                 stmt.setLong(11, Long.parseLong(phone));
                 query = stmt.toString();
                 success = stmt.executeUpdate() > 0;
-                rental = new Rental(getRID(phone, confirmatioNumber, type, location, from, to, creditCardNumber,
+                rental = new Rental(getRID(phone, confirmationNumber, type, location, from, to, creditCardNumber,
                         expiryMonth, expiryYear, creditCardType,tobeRented), tobeRented, getCustomer(Long.parseLong(phone)), from, to,
                         tobeRented.getOdometer(), creditCardType, creditCardNumber, Date.valueOf(ldt.toLocalDate()),
                         getReservationByPhoneNumber(phone).getValue(), null);
                 stmt.close();
-                updateVehicleStatus(tobeRented, VehicleStatus.RENTED);
+                if (!updateVehicleStatus(tobeRented, VehicleStatus.RENTED)) {
+                    response = "vehicle status update failed";
+                };
             } catch (SQLException e) {
                 success = false;
                 response = ERROR;
@@ -576,7 +572,7 @@ public class Query implements Database {
         return new RentalResponse(query, success, response, rental);
     }
 
-    private void updateVehicleStatus(Vehicle vehicle, VehicleStatus newStatus) {
+    private boolean updateVehicleStatus(Vehicle vehicle, VehicleStatus newStatus) {
         String query = "UPDATE public.vehicle\n" +
                 "SET status = \'rented\'\n" +
                 "WHERE vid = ? and vlicense = ?";
@@ -586,12 +582,13 @@ public class Query implements Database {
             stmt.setString(2, vehicle.getvLicense());
             stmt.executeUpdate();
             stmt.close();
+            return true;
         } catch (SQLException e) {
-            e.printStackTrace();
+            return false;
         }
     }
 
-    private int getRID(String phone, String confirmatioNumber, VehicleTypeName type,
+    private int getRID(String phone, String confirmationNumber, VehicleTypeName type,
                        String location, LocalDateTime from, LocalDateTime to, String creditCardNumber,
                        String expiryMonth, String expiryYear, String creditCardType, Vehicle vehicle) {
         int ret = -1;
@@ -605,7 +602,7 @@ public class Query implements Database {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setString(1, vehicle.getvLicense());
             stmt.setLong(2, Long.parseLong(phone));
-            stmt.setInt(3, Integer.parseInt(confirmatioNumber));
+            stmt.setInt(3, Integer.parseInt(confirmationNumber));
             stmt.setTime(4, Time.valueOf(to.toLocalTime()));
             stmt.setDate(5, Date.valueOf(to.toLocalDate()));
             stmt.setTime(6, Time.valueOf(from.toLocalTime()));
@@ -675,8 +672,8 @@ public class Query implements Database {
         String response = SUCCESS;
         boolean success = true;
         String query = "SELECT v.* \n" +
-                "FROM public.vehicle v" +
-                "WHERE v.vlicence = ?";
+                "FROM public.vehicle v \n" +
+                "WHERE v.vlicense = ?";
 
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
@@ -690,7 +687,7 @@ public class Query implements Database {
                 Vehicle returnV = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
                         rs.getString("make"), rs.getString("model"),
                         rs.getString("year"), rs.getString("color"),
-                        rs.getInt("odomoter"), status, null, vehicleTypeName);
+                        rs.getInt("odometer"), status, null, vehicleTypeName);
                 return new VehicleResponse(query, true, response, returnV);
             }
             rs.close();
@@ -730,8 +727,11 @@ public class Query implements Database {
             }
         } else {response = "invalid location";}
         // update VEHICLE STATUS
-        updateVehicleStatus(v, v.getStatus());
-        return new StringResponse(query, success, response, response);
+        if (updateVehicleStatus(v, v.getStatus())) {
+            return new StringResponse(query, success, response, response);
+        } else {
+            return new StringResponse(query, true, "vehicle status update failed", "");
+        }
     }
 
     @Override

@@ -821,6 +821,8 @@ public class UIController {
                     paymentInformationErrorLabel.setText(reservation.getResponse());
                     return;
                 }
+
+                confirmationNumber = String.valueOf(reservation.getValue().getConfNo());
             }
 
             DatabaseResponse<Rental> rentVehicle = Main.database.rentVehicle(driversLicense, phone, confirmationNumber, vehicleTypeName == null ? null : VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()), location, fromDateTime, endDateTime, creditCardNumber, expiryMonth, expiryYear, creditCardType);
@@ -831,7 +833,8 @@ public class UIController {
                 paymentInformationErrorLabel.setText(rentVehicle.getResponse());
                 return;
             } else {
-                confirmationNumberLabel.setText(String.valueOf(rentVehicle.getValue().getRid()));
+                confirmationNumber = String.valueOf(rentVehicle.getValue().getReservation().getConfNo());
+                confirmationNumberLabel.setText(confirmationNumber);
             }
             // }
 
