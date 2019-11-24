@@ -10,6 +10,7 @@ import javax.swing.text.DateFormatter;
 import java.math.BigInteger;
 import java.sql.*;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -267,6 +268,7 @@ public class Query implements Database {
             stmt.close();
         } catch (SQLException e) {
             //StackTrace();
+            response = ERROR;
             success = false;
         }
         return new BooleanResponse(query, success, response, ret);
@@ -289,8 +291,13 @@ public class Query implements Database {
             resultSet.close();
             stmt.close();
         } catch (SQLException e) {
-            response = ERROR;
-            success = false;
+            if (e.getSQLState().equals("23505")) {
+                response = "already exists";
+                success = true;
+            } else {
+                response = ERROR;
+                success = false;
+            }
         }
         return new BooleanResponse(query, success, response, ret);
     }
@@ -311,7 +318,7 @@ public class Query implements Database {
             int counter = 0;
             while (resultSet.next()) {
                 ret = new Customer(resultSet.getInt("cellphone"), resultSet.getString("name"),
-                        resultSet.getString("address"), resultSet.getString("license"));
+                        resultSet.getString("address"), resultSet.getString("dlicense"));
                 counter++;
             }
             success = counter == 1;
@@ -336,7 +343,7 @@ public class Query implements Database {
             int counter = 0;
             while (resultSet.next()) {
                 ret = new Customer(resultSet.getInt("cellphone"), resultSet.getString("name"),
-                        resultSet.getString("address"), resultSet.getString("license"));
+                        resultSet.getString("address"), resultSet.getString("dlicense"));
                 counter++;
             }
             assert (counter == 1);
@@ -381,17 +388,14 @@ public class Query implements Database {
             stmt.setTime(4, toTime);
             return stmt.executeUpdate() > -1;
         } catch (SQLException e) {
-            if (e.getSQLState().equals("23505")) {
-                return true;
-            }
-            return false;
+            return e.getSQLState().equals("23505");
         }
     }
 
     @Override
     public DatabaseResponse<Reservation> reserveVehicle(String driversLicense, String phoneNumber, VehicleTypeName type,
                                                         String location, LocalDateTime from, LocalDateTime to) {
-        String response = SUCCESS;
+        String response;// = SUCCESS;
         boolean success = customerExists(driversLicense).getValue() && createTimePeriod(from, to);
         String query = "insert into public.reservation (vtname, cellphone, fromdate, fromtime, todate, totime) values (?,?,?,?,?,?)";
         if (success) {
@@ -537,7 +541,6 @@ public class Query implements Database {
         Rental rental = null;
         if (success) {
             Vehicle tobeRented = vehicles.get(0);
-            updateVehicleStatus(tobeRented, VehicleStatus.RENTED);
             query = "insert into public.rent (vlicense, fromdate, fromtime, todate, totime, odometer, cardname, cardno, expdate, " +
                     "confno, cellphone) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try {
@@ -550,16 +553,18 @@ public class Query implements Database {
                 stmt.setInt(6, tobeRented.getOdometer());
                 stmt.setString(7, creditCardType);
                 stmt.setLong(8, Long.parseLong(creditCardNumber));
-                stmt.setDate(9, Date.valueOf(expiryMonth + "/" + expiryYear));
+                LocalDateTime ldt = LocalDateTime.of(Integer.parseInt(expiryYear), Integer.parseInt(expiryMonth), 1, 4, 5);
+                stmt.setDate(9, Date.valueOf(ldt.toLocalDate()));
                 stmt.setInt(10, Integer.parseInt(confirmatioNumber));
                 stmt.setLong(11, Long.parseLong(phone));
                 query = stmt.toString();
                 success = stmt.executeUpdate() > 0;
                 rental = new Rental(getRID(phone, confirmatioNumber, type, location, from, to, creditCardNumber,
                         expiryMonth, expiryYear, creditCardType,tobeRented), tobeRented, getCustomer(Long.parseLong(phone)), from, to,
-                        tobeRented.getOdometer(), creditCardType, creditCardNumber, Date.valueOf(expiryMonth + "/" + expiryYear),
+                        tobeRented.getOdometer(), creditCardType, creditCardNumber, Date.valueOf(ldt.toLocalDate()),
                         getReservationByPhoneNumber(phone).getValue(), null);
                 stmt.close();
+                updateVehicleStatus(tobeRented, VehicleStatus.RENTED);
             } catch (SQLException e) {
                 success = false;
                 response = ERROR;
@@ -608,7 +613,8 @@ public class Query implements Database {
             stmt.setInt(8, vehicle.getOdometer());
             stmt.setString(9, creditCardType);
             stmt.setLong(10, Long.parseLong(creditCardNumber));
-            stmt.setDate(11, Date.valueOf(expiryMonth + "/" + expiryYear));
+            LocalDateTime ldt = LocalDateTime.of(Integer.parseInt(expiryYear), Integer.parseInt(expiryMonth), 1, 4,5);
+            stmt.setDate(11, Date.valueOf(ldt.toLocalDate()));
             ResultSet rs = stmt.executeQuery();
             int counter = 0;
             while(rs.next()) {
@@ -703,27 +709,28 @@ public class Query implements Database {
                                                   boolean gasTankIsFull, int cost) {
         boolean success = locationExists(location).getValue();
         String response = SUCCESS;
-        // UPDATE VEHICLE STATUS
         Vehicle v = getVehicle(getRental(rentalID).getValue().getVehicle().getvLicense()).getValue();
-        updateVehicleStatus(v, v.getStatus());
 
         String query = "insert into public.return (rid, date, time, odometer, fulltank, value) values (?, ?, ?, ?, ?, ?)";
-        try {
-            PreparedStatement stmt = conn.prepareStatement(query);
-            stmt.setInt(1, Integer.parseInt(rentalID));
-            stmt.setDate(2, Date.valueOf(time.toLocalDate()));
-            stmt.setTime(3, Time.valueOf(time.toLocalTime()));
-            stmt.setInt(4, Integer.parseInt(odometer));
-            stmt.setBoolean(5, gasTankIsFull);
-            stmt.setInt(6, cost);
-            query = stmt.toString();
-            success = stmt.executeUpdate() > 0;
-            stmt.close();
-        } catch (SQLException e) {
-            success = false;
-            response = ERROR;
-        }
-        if (success) {response = "cannot return this vehicle";}
+        if (success) {
+            try {
+                PreparedStatement stmt = conn.prepareStatement(query);
+                stmt.setInt(1, Integer.parseInt(rentalID));
+                stmt.setDate(2, Date.valueOf(time.toLocalDate()));
+                stmt.setTime(3, Time.valueOf(time.toLocalTime()));
+                stmt.setInt(4, Integer.parseInt(odometer));
+                stmt.setBoolean(5, gasTankIsFull);
+                stmt.setInt(6, cost);
+                query = stmt.toString();
+                success = stmt.executeUpdate() > 0;
+                stmt.close();
+            } catch (SQLException e) {
+                success = false;
+                response = ERROR;
+            }
+        } else {response = "invalid location";}
+        // update VEHICLE STATUS
+        updateVehicleStatus(v, v.getStatus());
         return new StringResponse(query, success, response, response);
     }
 

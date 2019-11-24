@@ -537,6 +537,16 @@
                               <TextField fx:id="rentVehicleDriversLicenseTextField" />
                            </children>
                         </HBox>
+                        <HBox fx:id="rentVehicleLocationBox" alignment="CENTER_LEFT" layoutX="20.0" layoutY="153.0" spacing="10.0">
+                           <children>
+                              <Label text="Location">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                              <TextField fx:id="rentVehicleLocationTextField" />
+                           </children>
+                        </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                            <children>
                               <Button fx:id="rentVehicleInitialNextButton" mnemonicParsing="false" onAction="#processRental" text="Next" />
@@ -833,7 +843,7 @@
                   </VBox>
                </children>
             </AnchorPane>
-            <AnchorPane fx:id="generateReportPane" layoutX="10.0" layoutY="10.0">
+            <AnchorPane fx:id="generateReportPane" layoutX="10.0" layoutY="10.0" visible="false">
                <children>
                   <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
                      <children>
@@ -864,7 +874,7 @@
                                                 <ComboBox fx:id="generateReportTypeComboBox" prefWidth="150.0" />
                                              </children>
                                           </HBox>
-                                          <HBox fx:id="generateReportTypeBranchBox" alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
+                                          <HBox fx:id="generateReportTypeBranchBox" alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0" visible="false">
                                              <children>
                                                 <Label text="Location" />
                                                 <TextField fx:id="generateReportTypeLocationTextField" prefHeight="25.0" prefWidth="100.0" />

@@ -9,10 +9,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import model.Rental;
-import model.Reservation;
-import model.Vehicle;
-import model.VehicleTypeName;
+import model.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -218,6 +215,10 @@ public class UIController {
     HBox rentVehicleDriversLicenseBox;
     @FXML
     TextField rentVehicleDriversLicenseTextField;
+    @FXML
+    HBox rentVehicleLocationBox;
+    @FXML
+    TextField rentVehicleLocationTextField;
     @FXML
     Button rentVehicleInitialNextButton;
     @FXML
@@ -889,15 +890,18 @@ public class UIController {
 
     @FXML
     public void rentVehicle(ActionEvent actionEvent) {
+        rentVehicleInitialErrorLabel.setVisible(false);
         makeAllPanesInvisible();
         rentVehicleInitialPane.setVisible(true);
         rentVehicleNewCustomerRadioButton.setOnAction(event -> {
             rentVehicleDriversLicenseBox.setVisible(false);
             rentVehicleConfirmationNumberBox.setVisible(false);
+            rentVehicleLocationBox.setVisible(false);
         });
         rentVehicleExistingReservationRadioButton.setOnAction(event -> {
             rentVehicleDriversLicenseBox.setVisible(true);
             rentVehicleConfirmationNumberBox.setVisible(true);
+            rentVehicleLocationBox.setVisible(true);
         });
         setRental(true);
     }
@@ -919,7 +923,53 @@ public class UIController {
 
             if (rentVehicleDriversLicenseTextField.getText().isBlank()) {
                 rentVehicleInitialErrorLabel.setVisible(true);
-                rentVehicleInitialErrorLabel.setText("Invalid Driver's License");
+                rentVehicleInitialErrorLabel.setText("Missing Driver's License");
+                return;
+            }
+
+            if (rentVehicleLocationTextField.getText().isBlank()) {
+                rentVehicleInitialErrorLabel.setVisible(true);
+                rentVehicleInitialErrorLabel.setText("Missing location");
+                return;
+            }
+
+            DatabaseResponse<Boolean> locationExists = Main.database.locationExists(rentVehicleLocationTextField.getText());
+            logResponse(locationExists);
+            if (locationExists.isSuccess()) {
+                if (locationExists.getValue()) {
+                    location = rentVehicleLocationTextField.getText();
+                } else {
+                    rentVehicleInitialErrorLabel.setVisible(true);
+                    rentVehicleInitialErrorLabel.setText("Unknown location");
+                    return;
+                }
+            } else {
+                rentVehicleInitialErrorLabel.setVisible(true);
+                rentVehicleInitialErrorLabel.setText("Something went wrong when getting the details for this location");
+                return;
+            }
+
+            driversLicense = rentVehicleDriversLicenseTextField.getText();
+
+            DatabaseResponse<Boolean> customerExists = Main.database.customerExists(driversLicense);
+            logResponse(customerExists);
+
+            if (customerExists.isSuccess()) {
+                DatabaseResponse<Customer> customerResponse = Main.database.getCustomer(driversLicense);
+                logResponse(customerResponse);
+
+                if (customerResponse.isSuccess()) {
+                    phone = String.valueOf(customerResponse.getValue().getCellPhone());
+                    name = customerResponse.getValue().getName();
+                    address = customerResponse.getValue().getAddress();
+                } else {
+                    rentVehicleInitialErrorLabel.setVisible(true);
+                    rentVehicleInitialErrorLabel.setText("something went wrong when getting this customer's information");
+                    return;
+                }
+            } else {
+                rentVehicleInitialErrorLabel.setVisible(true);
+                rentVehicleInitialErrorLabel.setText("unable to find customer with given driver's license");
                 return;
             }
 
@@ -933,34 +983,35 @@ public class UIController {
             logResponse(getReservationFromPhone);
             if (getReservationFromConfirmationNumber.isSuccess()) {
                 reservation = getReservationFromConfirmationNumber.getValue();
-
-                // phone = String.valueOf(reservation.getCustomer().getCellPhone());
-                // name = reservation.getCustomer().getName();
-                // address = reservation.getCustomer().getAddress();
-                // driversLicense = reservation.getCustomer().getDlicense();
-                vehicleTypeName = reservation.getVtName().getName();
             } else if (getReservationFromPhone.isSuccess()) {
                 reservation = getReservationFromPhone.getValue();
-                // phone = String.valueOf(reservation.getCustomer().getCellPhone());
-                // name = reservation.getCustomer().getName();
-                // address = reservation.getCustomer().getAddress();
-                // driversLicense = reservation.getCustomer().getDlicense();
-                vehicleTypeName = reservation.getVtName().getName();
             } else {
                 rentVehicleInitialErrorLabel.setVisible(true);
                 rentVehicleInitialErrorLabel.setText("Unknown reservation or phone number");
                 return;
             }
 
-            DatabaseResponse<Rental> rentalConfirmation = Main.database.rentVehicle(driversLicense, phone, confirmationNumber, VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()), location, fromDateTime, endDateTime, creditCardNumber, expiryMonth, expiryYear, creditCardType);
-            logResponse(rentalConfirmation);
-            if (rentalConfirmation.isSuccess()) {
-                confirmationNumber = String.valueOf(rentalConfirmation.getValue().getRid());
-            } else {
+            if (!String.valueOf(reservation.getCellPhone()).equals(phone)) {
                 rentVehicleInitialErrorLabel.setVisible(true);
-                rentVehicleInitialErrorLabel.setText(rentalConfirmation.getResponse());
+                rentVehicleInitialErrorLabel.setText("Reservation does not belong to user");
                 return;
             }
+
+            vehicleTypeName = reservation.getVtName().getName();
+            confirmationNumber = String.valueOf(reservation.getConfNo());
+            fromDateTime = reservation.getFrom();
+            endDateTime = reservation.getTo();
+
+            // moved to payment
+            // DatabaseResponse<Rental> rentalConfirmation = Main.database.rentVehicle(driversLicense, phone, confirmationNumber, VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()), location, fromDateTime, endDateTime, creditCardNumber, expiryMonth, expiryYear, creditCardType);
+            // logResponse(rentalConfirmation);
+            // if (rentalConfirmation.isSuccess()) {
+            //     confirmationNumber = String.valueOf(rentalConfirmation.getValue().getRid());
+            // } else {
+            //     rentVehicleInitialErrorLabel.setVisible(true);
+            //     rentVehicleInitialErrorLabel.setText(rentalConfirmation.getResponse());
+            //     return;
+            // }
         }
 
         rentVehicleInitialErrorLabel.setVisible(false);
@@ -976,7 +1027,7 @@ public class UIController {
             }
             vehicleTypeSelectionPane.setVisible(true);
         } else {
-            driversLicense = rentVehicleDriversLicenseTextField.getText();
+            // driversLicense = rentVehicleDriversLicenseTextField.getText();
 
             // TODO generate rental confirmation number and add to confirmation screen
             paymentInformationPane.setVisible(true);
