@@ -4,8 +4,10 @@ package jdbc;
 
 import main.Database;
 import main.DatabaseResponse;
+import main.UIController;
 import model.*;
 
+import javax.print.DocFlavor;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ public class Query implements Database {
     private static Connection conn;
 
     private static final Query QUERY_INSTANCE = new Query();
+    private static final UIController UI_CONTROLLER = new UIController();
 
     //private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -187,6 +190,7 @@ public class Query implements Database {
                 //success = false;
             }
         }
+        UI_CONTROLLER.logResponse(new VehicleListResponse(query, success, returnList.toString(), returnList));
         return returnList;
     }
 
@@ -357,6 +361,7 @@ public class Query implements Database {
     }
 
     private Customer getCustomer(Long phoneNumber) {
+        boolean success = true;
         Customer ret = null;
         String query = "SELECT c.*\n" +
                 "FROM public.customer c\n" +
@@ -375,8 +380,9 @@ public class Query implements Database {
             resultSet.close();
             stmt.close();
         } catch (SQLException e) {
-            //success = false;
+            success = false;
         }
+        UI_CONTROLLER.logResponse(new CustomerResponse(query, success, String.valueOf(success), ret));
         return ret;
     }
 
@@ -400,6 +406,7 @@ public class Query implements Database {
     }
 
     private boolean createTimePeriod(LocalDateTime from, LocalDateTime to) {
+        boolean success = false;
         Date fromDate = Date.valueOf(from.toLocalDate());
         Time fromTime = Time.valueOf(from.toLocalTime());
         Date toDate = Date.valueOf(to.toLocalDate());
@@ -411,10 +418,12 @@ public class Query implements Database {
             stmt.setTime(2, fromTime);
             stmt.setDate(3, toDate);
             stmt.setTime(4, toTime);
-            return stmt.executeUpdate() > -1;
+            success = stmt.executeUpdate() > -1;
         } catch (SQLException e) {
-            return e.getSQLState().equals("23505");
+            success = e.getSQLState().equals("23505");
         }
+        UI_CONTROLLER.logResponse(new BooleanResponse(query, success, success ? SUCCESS : ERROR, success));
+        return success;
     }
 
     @Override
@@ -477,6 +486,7 @@ public class Query implements Database {
                 e.printStackTrace();
             }
         }
+        UI_CONTROLLER.logResponse(new StringResponse(query, success, success ? SUCCESS : ERROR, confno));
         return confno;
     }
 
@@ -605,6 +615,7 @@ public class Query implements Database {
     }
 
     private boolean updateVehicleStatus(Vehicle vehicle, VehicleStatus newStatus) {
+        boolean success = false;
         String query = "UPDATE public.vehicle\n" +
                 "SET status = \'rented\'\n" +
                 "WHERE vid = ? and vlicense = ?";
@@ -614,15 +625,18 @@ public class Query implements Database {
             stmt.setString(2, vehicle.getvLicense());
             stmt.executeUpdate();
             stmt.close();
-            return true;
+            success = true;
         } catch (SQLException e) {
-            return false;
+            //
         }
+        UI_CONTROLLER.logResponse(new BooleanResponse(query, success, success ? SUCCESS : ERROR, success));
+        return success;
     }
 
     private int getRID(String phone, String confirmationNumber, VehicleTypeName type,
                        String location, LocalDateTime from, LocalDateTime to, String creditCardNumber,
                        String expiryMonth, String expiryYear, String creditCardType, Vehicle vehicle) {
+        boolean success = false;
         int ret = -1;
         String query = "SELECT r.rid\n" +
                 "FROM public.rent r\n" +
@@ -653,9 +667,11 @@ public class Query implements Database {
             assert (counter == 1);
             rs.close();
             stmt.close();
+            success = true;
         } catch (SQLException e) {
-            e.printStackTrace();
+            //
         }
+        UI_CONTROLLER.logResponse(new IntegerResponse(query, success, success ? SUCCESS : ERROR, ret));
         return ret;
     }
 
@@ -825,6 +841,7 @@ public class Query implements Database {
 
     private IntegerResponse getAllRates(VehicleTypeName type, String rateVar) {
         //String response = SUCCESS;
+        //boolean success = false;
         String query = "SELECT vt." + rateVar + "\n" +
                 "FROM public.vehicletype vt \n" +
                 "WHERE vt.vtname = ?\n" +
@@ -839,8 +856,10 @@ public class Query implements Database {
             int ret = rs.getInt(rateVar);
             rs.close();
             stmt.close();
+            UI_CONTROLLER.logResponse(new IntegerResponse(query, true, SUCCESS, ret));
             return new IntegerResponse(query, true, SUCCESS, ret);
         } catch (SQLException e) {
+            UI_CONTROLLER.logResponse(new IntegerResponse(query, false, ERROR, -1));
             return new IntegerResponse(query, false, ERROR, -1);
         }
     }

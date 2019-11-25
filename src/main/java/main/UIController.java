@@ -313,6 +313,10 @@ public class UIController {
     @FXML
     Text viewEditDatabaseResultText;
 
+    public UIController() {
+        //
+    }
+
     @FXML
     public void viewVehicles(ActionEvent actionEvent) {
         makeAllPanesInvisible();
@@ -1534,7 +1538,7 @@ public class UIController {
         return true;
     }
 
-    private void logResponse(DatabaseResponse<?> response) {
+    public void logResponse(DatabaseResponse<?> response) {
         String formatted = "QUERY: " + response.getQuery() + "\n" +
                 "SUCCESS: " + response.isSuccess() + "\n" +
                 "RESPONSE: " + response.getResponse() + "\n\n";
