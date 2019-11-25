@@ -68,7 +68,7 @@
                   </HBox>
                   <HBox>
                      <children>
-                        <Button fx:id="generateReportButton" mnemonicParsing="false" onAction="#showGenerateReportScreen" text="Generate Report" />
+                        <Button fx:id="generateReportMenuButton" mnemonicParsing="false" onAction="#showGenerateReportScreen" text="Generate Report" />
                      </children>
                   </HBox>
                   <HBox>
@@ -537,6 +537,16 @@
                               <TextField fx:id="rentVehicleDriversLicenseTextField" />
                            </children>
                         </HBox>
+                        <HBox fx:id="rentVehicleLocationBox" alignment="CENTER_LEFT" layoutX="20.0" layoutY="153.0" spacing="10.0">
+                           <children>
+                              <Label text="Location">
+                                 <padding>
+                                    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                                 </padding>
+                              </Label>
+                              <TextField fx:id="rentVehicleLocationTextField" />
+                           </children>
+                        </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                            <children>
                               <Button fx:id="rentVehicleInitialNextButton" mnemonicParsing="false" onAction="#processRental" text="Next" />
@@ -574,6 +584,12 @@
                            <children>
                               <Label text="Rental ID" />
                               <TextField fx:id="returnVehicleStatusRentalIDTextField" />
+                           </children>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="57.0" spacing="10.0">
+                           <children>
+                              <Label text="Location" />
+                              <TextField fx:id="returnVehicleStatusLocationTextField" />
                            </children>
                         </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
@@ -874,7 +890,7 @@
                                           </HBox>
                                           <HBox alignment="CENTER_LEFT" spacing="5.0">
                                              <children>
-                                                <Button fx:id="generateReportButton" mnemonicParsing="false" onAction="#generateReport" text="Generate" />
+                                                <Button fx:id="generateButton" mnemonicParsing="false" onAction="#generateReport" text="Generate" />
                                                 <Label fx:id="generateReportErrorLabel" style="-fx-border-color: red;" text="Label" visible="false" />
                                              </children>
                                           </HBox>
@@ -923,7 +939,7 @@
                            <content>
                               <AnchorPane minHeight="0.0" minWidth="0.0">
                                  <children>
-                                    <VBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                    <VBox spacing="10.0">
                                        <children>
                                           <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
                                              <children>

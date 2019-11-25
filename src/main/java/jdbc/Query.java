@@ -4,8 +4,10 @@ package jdbc;
 
 import main.Database;
 import main.DatabaseResponse;
+import main.UIController;
 import model.*;
 
+import javax.print.DocFlavor;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,12 +22,15 @@ public class Query implements Database {
     public static final String USER = "postgres";
     public static final String PASS = "hunter2";
 
-    private static final String ERROR = "Unable to retrieve the requested info";
+    private static final String ERROR = "Unable to retrieve the requested info: SQL ERROR";
     private static final String SUCCESS = "Success";
 
     private static Connection conn;
 
     private static final Query QUERY_INSTANCE = new Query();
+    private static final UIController UI_CONTROLLER = new UIController();
+
+    //private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private Query() {
         try {
@@ -53,20 +58,90 @@ public class Query implements Database {
 //    }
 
 
-    private String getResponse(boolean var) {
-        return var ? SUCCESS : ERROR;
-    }
+//    private String getResponse(boolean var) {
+//        return var ? SUCCESS : ERROR;
+//    }
 
     @Override
     public DatabaseResponse<List<Vehicle>> getVehicles(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
         boolean success = locationExists(location).getValue();
+        String response = SUCCESS;
+        List<Vehicle> returnList = new ArrayList<>();
+        String query = "SELECT v.* \n" +
+                "FROM public.vehicle v\n" +
+                "WHERE v.status = \'for_rent\'";
+
+        if (type != null) {
+            query += " and v.vtname = \'" + type.getName() + "\'";
+        }
+        if (location != null && !location.equals("")) {
+            query += " and v.location = ?";// + location;
+        }
+
+//        // logic for date and time
+//        if (from != null && to != null) {
+//            Date toDate = Date.valueOf(to.toLocalDate());
+//            Time toTime = Time.valueOf(to.toLocalTime());
+//            Date fromDate = Date.valueOf(from.toLocalDate());
+//            Time fromTime = Time.valueOf(from.toLocalTime());
+//            query += " and (((not r.fromDate >= \'" + fromDate.toString() + "\') or r.fromTime >= \'" + fromTime.toString() +
+//                    "\') or ((not r.toDate <= \'" + toDate.toString() + "\') or r.toTime <= + \'" + toTime.toString() + "\'))";
+//        } else if (from != null) {
+//            Date fromDate = Date.valueOf(from.toLocalDate());
+//            Time fromTime = Time.valueOf(from.toLocalTime());
+//            query += " and ((not r.fromDate >= \'" + fromDate.toString() + "\') or r.fromTime >= \'" + fromTime.toString() + "\')";
+//        } else if (to != null) {
+//            Date toDate = Date.valueOf(to.toLocalDate());
+//            Time toTime = Time.valueOf(to.toLocalTime());
+//            query += " and ((not r.fromDate <= \'" + toDate.toString() + "\') or r.fromTime <= \'" + toTime.toString() + "" +
+//                    "\')";
+//        }
+
+        if (success) {
+            try {
+                PreparedStatement stmt = conn.prepareStatement(query);
+                if (query.contains("?")) {
+                    stmt.setString(1, location);
+                }
+                query = stmt.toString();
+                ResultSet rs = stmt.executeQuery();
+                assert (rs != null);
+                while (rs.next()) {
+                    VehicleStatus status = VehicleStatus.toStatus(rs.getString("status"));
+                    VehicleTypeName vehicleTypeName = VehicleTypeName.toVehicleTypeName(rs.getString("vtname"));
+                    Vehicle vehicle = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
+                            rs.getString("make"), rs.getString("model"),
+                            rs.getString("year"), rs.getString("color"),
+                            rs.getInt("odometer"), status, null, vehicleTypeName);
+                    returnList.add(vehicle);
+                }
+                rs.close();
+                stmt.close();
+
+            } catch (SQLException e) {
+                success = false;
+                response = ERROR;
+            }
+        } else {
+            response = "invalid location";
+        }
+        List<Vehicle> dQ = getRentedVehicles(type, location, from, to);
+        if (returnList.size() == dQ.size()) {
+            response = "no available vehicles";
+        }
+        returnList.removeAll(dQ);
+        return new VehicleListResponse(query, success, response, returnList);
+    }
+
+    private List<Vehicle> getRentedVehicles(VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
+        boolean success = locationExists(location).getValue();
         List<Vehicle> returnList = new ArrayList<>();
         String query = "SELECT v.* \n" +
                 "FROM public.vehicle v, public.rent r\n" +
-                "WHERE v.status = \'for_rent\' and  r.vlicense = v.vlicense";
+                "WHERE v.vlicense = r.vlicense";
 
         if (type != null) {
-            query += " and v.vtname = " + type.getName();
+            query += " and v.vtname = \'" + type.getName() + "\'";
         }
         if (location != null && !location.equals("")) {
             query += " and v.location = ?";// + location;
@@ -78,16 +153,17 @@ public class Query implements Database {
             Time toTime = Time.valueOf(to.toLocalTime());
             Date fromDate = Date.valueOf(from.toLocalDate());
             Time fromTime = Time.valueOf(from.toLocalTime());
-            query += " and (((not r.fromDate >= " + fromDate.toString() + ") or r.fromTime >= " + fromTime.toString() +
-                    ") or ((not r.toDate <= " + toDate.toString() + ") or r.toTime <= + " + toTime.toString() + "))";
+            query += " and (((not r.fromDate >= \'" + fromDate.toString() + "\') or r.fromTime >= \'" + fromTime.toString() +
+                    "\') or ((not r.toDate <= \'" + toDate.toString() + "\') or r.toTime <= + \'" + toTime.toString() + "\'))";
         } else if (from != null) {
             Date fromDate = Date.valueOf(from.toLocalDate());
             Time fromTime = Time.valueOf(from.toLocalTime());
-            query += " and ((not r.fromDate >= " + fromDate.toString() + ") or r.fromTime >= " + fromTime.toString() + ")";
+            query += " and ((not r.fromDate >= \'" + fromDate.toString() + "\') or r.fromTime >= \'" + fromTime.toString() + "\')";
         } else if (to != null) {
             Date toDate = Date.valueOf(to.toLocalDate());
             Time toTime = Time.valueOf(to.toLocalTime());
-            query += " and ((not r.fromDate <= " + toDate.toString() + ") or r.fromTime <= " + toTime.toString() + ")";
+            query += " and ((not r.fromDate <= \'" + toDate.toString() + "\') or r.fromTime <= \'" + toTime.toString() + "" +
+                    "\')";
         }
 
         if (success) {
@@ -104,18 +180,18 @@ public class Query implements Database {
                     Vehicle vehicle = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
                             rs.getString("make"), rs.getString("model"),
                             rs.getString("year"), rs.getString("color"),
-                            rs.getInt("odomoter"), status, null, vehicleTypeName);
+                            rs.getInt("odometer"), status, null, vehicleTypeName);
                     returnList.add(vehicle);
                 }
                 rs.close();
                 stmt.close();
 
             } catch (SQLException e) {
-                success = false;
+                //success = false;
             }
         }
-        return new VehicleListResponse(query, success, getResponse(success), returnList);
-
+        UI_CONTROLLER.logResponse(new VehicleListResponse(query, success, returnList.toString(), returnList));
+        return returnList;
     }
 
     @Override
@@ -129,6 +205,11 @@ public class Query implements Database {
     }
 
 
+//    @Override
+//    public DatabaseResponse<String> generateDailyBranchRentalReport(String branch) {
+//        return null;
+//    }
+
     @Override
     public DatabaseResponse<String> generateDailyReturnReport() {
         return Reports.getDailyReturns();
@@ -139,30 +220,71 @@ public class Query implements Database {
         return Reports.getDailyReturns(branch);
     }
 
+//    @Override
+//    public DatabaseResponse<String> generateDailyBranchReturnReport(String branch) {
+//        return null;
+//    }
+
     @Override
     public DatabaseResponse<Boolean> locationExists(String location) {
-        boolean ret;
+        boolean ret = false;
+        boolean success = true;
+        String response = SUCCESS;
         String query = "SELECT b.*\n" +
                 "FROM public.branch b\n" +
                 "WHERE b.location = ?";
+        if (location == null || location.equals("")) {
+            return new BooleanResponse(query, true, response, true);
+        }
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setString(1, location);
+            query = stmt.toString();
             ResultSet resultSet = stmt.executeQuery();
             ret = resultSet.next();
             resultSet.close();
             stmt.close();
         } catch (SQLException e) {
-            //StackTrace();
-            ret = false;
+            response = ERROR;
+            success = false;
         }
-        return new BooleanResponse(query, ret, getResponse(ret), ret);
+        return new BooleanResponse(query, success, response, ret);
+    }
+
+
+    @Override
+    public DatabaseResponse<Boolean> customerExists(Long phone) {
+        String response = SUCCESS;
+        boolean success = true;
+        boolean ret = false;
+        String query = "SELECT c.cellphone\n" +
+                "FROM public.customer c\n" +
+                "WHERE c.cellphone = ?";
+        try {
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setLong(1, phone);
+            query = stmt.toString();
+            ResultSet resultSet = stmt.executeQuery();
+            ret = resultSet.next();
+            resultSet.close();
+            stmt.close();
+        } catch (SQLException e) {
+            if (e.getSQLState().equals("23505")) {
+                response = "already exists";
+                success = true;
+            } else {
+                response = ERROR;
+                success = false;
+            }
+        }
+        return new BooleanResponse(query, success, response, ret);
     }
 
     @Override
     public DatabaseResponse<Boolean> branchExists(String location, String city) {
         boolean ret = false;
         boolean success = true;
+        String response = SUCCESS;
         String query = "SELECT b.*\n" +
                 "FROM public.branch b\n" +
                 "WHERE b.location = ? and b.city = ?";
@@ -177,33 +299,44 @@ public class Query implements Database {
             stmt.close();
         } catch (SQLException e) {
             //StackTrace();
+            response = ERROR;
             success = false;
         }
-        return new BooleanResponse(query, success, getResponse(ret), ret);
+        return new BooleanResponse(query, success, response, ret);
     }
 
 
     @Override
     public DatabaseResponse<Boolean> customerExists(String driversLicense) {
-        boolean ret;
+        String response = SUCCESS;
+        boolean success = true;
+        boolean ret = false;
         String query = "SELECT c.dlicense\n" +
                 "FROM public.customer c\n" +
                 "WHERE c.dlicense = ?";
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setString(1, driversLicense);
+            query = stmt.toString();
             ResultSet resultSet = stmt.executeQuery();
             ret = resultSet.next();
             resultSet.close();
             stmt.close();
         } catch (SQLException e) {
-            ret = false;
+            if (e.getSQLState().equals("23505")) {
+                response = "already exists";
+                success = true;
+            } else {
+                response = ERROR;
+                success = false;
+            }
         }
-        return new BooleanResponse(query, ret, getResponse(ret), ret);
+        return new BooleanResponse(query, success, response, ret);
     }
 
     @Override
     public DatabaseResponse<Customer> getCustomer(String driversLicense) {
+        String response = SUCCESS;
         Customer ret = null;
         boolean success;
         String query = "SELECT c.*\n" +
@@ -212,11 +345,12 @@ public class Query implements Database {
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setString(1, driversLicense);
+            query = stmt.toString();
             ResultSet resultSet = stmt.executeQuery();
             int counter = 0;
             while (resultSet.next()) {
-                ret = new Customer(resultSet.getInt("cellphone"), resultSet.getString("name"),
-                        resultSet.getString("address"), resultSet.getString("license"));
+                ret = new Customer(resultSet.getLong("cellphone"), resultSet.getString("name"),
+                        resultSet.getString("address"), resultSet.getString("dlicense"));
                 counter++;
             }
             success = counter == 1;
@@ -224,11 +358,13 @@ public class Query implements Database {
             stmt.close();
         } catch (SQLException e) {
             success = false;
+            response = ERROR;
         }
-        return new CustomerResponse(query, success, getResponse(success), ret);
+        return new CustomerResponse(query, success, response, ret);
     }
 
     private Customer getCustomer(Long phoneNumber) {
+        boolean success = true;
         Customer ret = null;
         String query = "SELECT c.*\n" +
                 "FROM public.customer c\n" +
@@ -239,16 +375,17 @@ public class Query implements Database {
             ResultSet resultSet = stmt.executeQuery();
             int counter = 0;
             while (resultSet.next()) {
-                ret = new Customer(resultSet.getInt("cellphone"), resultSet.getString("name"),
-                        resultSet.getString("address"), resultSet.getString("license"));
+                ret = new Customer(resultSet.getLong("cellphone"), resultSet.getString("name"),
+                        resultSet.getString("address"), resultSet.getString("dlicense"));
                 counter++;
             }
             assert (counter == 1);
             resultSet.close();
             stmt.close();
         } catch (SQLException e) {
-            //success = false;
+            success = false;
         }
+        UI_CONTROLLER.logResponse(new CustomerResponse(query, success, String.valueOf(success), ret));
         return ret;
     }
 
@@ -257,64 +394,71 @@ public class Query implements Database {
         String query = "insert into public.customer (cellphone, name, address, dlicense) values (?,?,?,?)";
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
-            stmt.setInt(1, Integer.parseInt(phone));
+            stmt.setLong(1, Long.parseLong(phone));
             stmt.setString(2, name);
             stmt.setString(3, address);
             stmt.setString(4, driversLicense);
+            query = stmt.toString();
             stmt.executeUpdate();
             stmt.close();
         } catch (SQLException e) {
-            return new DatabaseResponse<>() {
-                @Override
-                public String getQuery() {
-                    return null;
-                }
-
-                @Override
-                public boolean isSuccess() {
-                    return false;
-                }
-
-                @Override
-                public String getResponse() {
-                    return null;
-                }
-
-                @Override
-                public Object getValue() {
-                    return null;
-                }
-            };
+            return new StringResponse(query, false, ERROR, "");
         }
 
-        return new DatabaseResponse<>() {
-            @Override
-            public String getQuery() {
-                return null;
-            }
+        return new StringResponse(query, true, SUCCESS, "");
+    }
 
-            @Override
-            public boolean isSuccess() {
-                return true;
-            }
-
-            @Override
-            public String getResponse() {
-                return null;
-            }
-
-            @Override
-            public Object getValue() {
-                return null;
-            }
-        };
+    private boolean createTimePeriod(LocalDateTime from, LocalDateTime to) {
+        boolean success = false;
+        Date fromDate = Date.valueOf(from.toLocalDate());
+        Time fromTime = Time.valueOf(from.toLocalTime());
+        Date toDate = Date.valueOf(to.toLocalDate());
+        Time toTime = Time.valueOf(to.toLocalTime());
+        String query = "insert into public.timeperiod (fromdate, fromtime, todate, totime) values (?, ?, ?, ?)";
+        try {
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setDate(1, fromDate);
+            stmt.setTime(2, fromTime);
+            stmt.setDate(3, toDate);
+            stmt.setTime(4, toTime);
+            success = stmt.executeUpdate() > -1;
+        } catch (SQLException e) {
+            success = e.getSQLState().equals("23505");
+        }
+        UI_CONTROLLER.logResponse(new BooleanResponse(query, success, success ? SUCCESS : ERROR, success));
+        return success;
     }
 
     @Override
-    public DatabaseResponse<Reservation> reserveVehicle(String driversLicense, String phoneNumber, VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to) {
-        return null;
+    public DatabaseResponse<Reservation> reserveVehicle(String driversLicense, String phoneNumber, VehicleTypeName type,
+                                                        String location, LocalDateTime from, LocalDateTime to) {
+        String response;// = SUCCESS;
+        boolean success = customerExists(driversLicense).getValue() && createTimePeriod(from, to);
+        String query = "insert into public.reservation (vtname, cellphone, fromdate, fromtime, todate, totime) values (?,?,?,?,?,?)";
+        if (success) {
+            try {
+                PreparedStatement stmt = conn.prepareStatement(query);
+                stmt.setString(1, type.getName());
+                stmt.setLong(2, Long.parseLong(phoneNumber));
+                stmt.setDate(3, Date.valueOf(from.toLocalDate()));
+                stmt.setTime(4, Time.valueOf(from.toLocalTime()));
+                stmt.setDate(5, Date.valueOf(to.toLocalDate()));
+                stmt.setTime(6, Time.valueOf(to.toLocalTime()));
+                query = stmt.toString();
+                success = stmt.executeUpdate() > 0;
+                stmt.close();
+                response = "Your confno is : " +
+                        getReservationByPhoneNumber(phoneNumber).getValue().getConfNo();
+                return new ReservationResponse(query, success, response, getReservationByPhoneNumber(phoneNumber).getValue());
+            } catch (SQLException e) {
+                success = false;
+                response = ERROR;
+            }
+        } else {
+            response = "customer does not exist or time period does not exist";
+        }
+        return new ReservationResponse(query, success, response, null);
     }
-
 
     private String getReservationNumber(VehicleTypeName type, String dlicense, LocalDateTime from, LocalDateTime to) {
         String confno = "";
@@ -345,11 +489,13 @@ public class Query implements Database {
                 e.printStackTrace();
             }
         }
+        UI_CONTROLLER.logResponse(new StringResponse(query, success, success ? SUCCESS : ERROR, confno));
         return confno;
     }
 
     @Override
     public DatabaseResponse<Reservation> getReservationByConfirmationNumber(String confirmationNumber) {
+        String response = SUCCESS;
         Reservation res = null;
         String query = "SELECT  r.* \n" +
                 "FROM public.reservation r \n" +
@@ -357,6 +503,7 @@ public class Query implements Database {
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setInt(1, Integer.parseInt(confirmationNumber));
+            query = stmt.toString();
             ResultSet rs = stmt.executeQuery();
             int counter = 0;
             while (rs.next()) {
@@ -364,8 +511,8 @@ public class Query implements Database {
                 Time fromTime = rs.getTime("fromtime");
                 Date toDate = rs.getDate("toDate");
                 Time toTime = rs.getTime("toTime");
-                LocalDateTime from = LocalDateTime.parse(fromDate.toString() + fromTime.toString());
-                LocalDateTime to = LocalDateTime.parse(toDate.toString() + toTime.toString());
+                LocalDateTime from = LocalDateTime.of(fromDate.toLocalDate(), fromTime.toLocalTime());
+                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate(), toTime.toLocalTime());
                 res = new Reservation(rs.getInt("confno"),
                         VehicleTypeName.toVehicleTypeName(rs.getString("vtname")),
                         rs.getLong("cellphone"), from, to);
@@ -375,13 +522,17 @@ public class Query implements Database {
             rs.close();
             stmt.close();
         } catch (SQLException e) {
-            //
+            response = ERROR;
         }
-        return new ReservationResponse(query, res != null, getResponse(res != null), res);
+        if (response.equals(ERROR)) {
+            response = res == null ? "could not retrieve the reservation" : SUCCESS;
+        }
+        return new ReservationResponse(query, res != null, response, res);
     }
 
     @Override
     public DatabaseResponse<Reservation> getReservationByPhoneNumber(String phoneNumber) {
+        String response = SUCCESS;
         Reservation res = null;
         String query = "SELECT  r.* \n" +
                 "FROM public.reservation r \n" +
@@ -389,6 +540,7 @@ public class Query implements Database {
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setLong(1, Long.parseLong(phoneNumber));
+            query = stmt.toString();
             ResultSet rs = stmt.executeQuery();
             int counter = 0;
             while (rs.next()) {
@@ -396,8 +548,8 @@ public class Query implements Database {
                 Time fromTime = rs.getTime("fromtime");
                 Date toDate = rs.getDate("toDate");
                 Time toTime = rs.getTime("toTime");
-                LocalDateTime from = LocalDateTime.parse(fromDate.toString() + " " + fromTime.toString());
-                LocalDateTime to = LocalDateTime.parse(toDate.toString() + " " + toTime.toString());
+                LocalDateTime from = LocalDateTime.of(fromDate.toLocalDate(), fromTime.toLocalTime());
+                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate(), toTime.toLocalTime());
                 res = new Reservation(rs.getInt("confno"),
                         VehicleTypeName.toVehicleTypeName(rs.getString("vtname")),
                         rs.getLong("cellphone"), from, to);
@@ -407,24 +559,26 @@ public class Query implements Database {
             rs.close();
             stmt.close();
         } catch (SQLException e) {
-            //
+            response = ERROR;
         }
-        return new ReservationResponse(query, res != null, getResponse(res != null), res);
+        if (response.equals(SUCCESS)) {
+            response = res == null ? "could not retrieve the reservation" : SUCCESS;
+        }
+        return new ReservationResponse(query, res != null, response, res);
     }
 
     @Override
-    public DatabaseResponse<Rental> rentVehicle(String driversLicense, String phone, String confirmatioNumber,
+    public DatabaseResponse<Rental> rentVehicle(String driversLicense, String phone, String confirmationNumber,
                                                 VehicleTypeName type, String location, LocalDateTime from, LocalDateTime to,
                                                 String creditCardNumber, String expiryMonth, String expiryYear, String creditCardType) {
-
-        boolean success = locationExists(location).getValue();
+        String response = SUCCESS;
+        boolean success = locationExists(location).getValue() && createTimePeriod(from, to);
         String query = "";
         List<Vehicle> vehicles = getVehicles(type, location, from, to).getValue();
         success = success && !vehicles.isEmpty();
         Rental rental = null;
         if (success) {
             Vehicle tobeRented = vehicles.get(0);
-            updateVehicleStatus(tobeRented, VehicleStatus.RENTED);
             query = "insert into public.rent (vlicense, fromdate, fromtime, todate, totime, odometer, cardname, cardno, expdate, " +
                     "confno, cellphone) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try {
@@ -437,24 +591,34 @@ public class Query implements Database {
                 stmt.setInt(6, tobeRented.getOdometer());
                 stmt.setString(7, creditCardType);
                 stmt.setLong(8, Long.parseLong(creditCardNumber));
-                stmt.setDate(9, Date.valueOf(expiryMonth + "/" + expiryYear));
-                stmt.setInt(10, Integer.parseInt(confirmatioNumber));
+                LocalDateTime ldt = LocalDateTime.of(Integer.parseInt(expiryYear), Integer.parseInt(expiryMonth), 1, 4, 5);
+                stmt.setDate(9, Date.valueOf(ldt.toLocalDate()));
+                stmt.setInt(10, Integer.parseInt(confirmationNumber));
                 stmt.setLong(11, Long.parseLong(phone));
+                query = stmt.toString();
                 success = stmt.executeUpdate() > 0;
-                rental = new Rental(getRID(phone, confirmatioNumber, type, location, from, to, creditCardNumber,
-                        expiryMonth, expiryYear, creditCardType,tobeRented), tobeRented, getCustomer(Long.parseLong(phone)), from, to,
-                        tobeRented.getOdometer(), creditCardType, creditCardNumber, Date.valueOf(expiryMonth + "/" + expiryYear),
+                rental = new Rental(getRID(phone, confirmationNumber, type, location, from, to, creditCardNumber,
+                        expiryMonth, expiryYear, creditCardType, tobeRented), tobeRented, getCustomer(Long.parseLong(phone)), from, to,
+                        tobeRented.getOdometer(), creditCardType, creditCardNumber, Date.valueOf(ldt.toLocalDate()),
                         getReservationByPhoneNumber(phone).getValue(), null);
                 stmt.close();
+                if (!updateVehicleStatus(tobeRented, VehicleStatus.RENTED)) {
+                    success = false;
+                    response = "vehicle status update failed";
+                }
             } catch (SQLException e) {
                 success = false;
+                response = ERROR;
             }
+        } else {
+            response = "invalid location or no available vehicles";
         }
 
-        return new RentalResponse(query, success, getResponse(success), rental);
+        return new RentalResponse(query, success, response, rental);
     }
 
-    private void updateVehicleStatus(Vehicle vehicle, VehicleStatus newStatus) {
+    private boolean updateVehicleStatus(Vehicle vehicle, VehicleStatus newStatus) {
+        boolean success = false;
         String query = "UPDATE public.vehicle\n" +
                 "SET status = \'rented\'\n" +
                 "WHERE vid = ? and vlicense = ?";
@@ -464,14 +628,18 @@ public class Query implements Database {
             stmt.setString(2, vehicle.getvLicense());
             stmt.executeUpdate();
             stmt.close();
+            success = true;
         } catch (SQLException e) {
-            e.printStackTrace();
+            //
         }
+        UI_CONTROLLER.logResponse(new BooleanResponse(query, success, success ? SUCCESS : ERROR, success));
+        return success;
     }
 
-    private int getRID(String phone, String confirmatioNumber, VehicleTypeName type,
+    private int getRID(String phone, String confirmationNumber, VehicleTypeName type,
                        String location, LocalDateTime from, LocalDateTime to, String creditCardNumber,
                        String expiryMonth, String expiryYear, String creditCardType, Vehicle vehicle) {
+        boolean success = false;
         int ret = -1;
         String query = "SELECT r.rid\n" +
                 "FROM public.rent r\n" +
@@ -483,7 +651,7 @@ public class Query implements Database {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setString(1, vehicle.getvLicense());
             stmt.setLong(2, Long.parseLong(phone));
-            stmt.setInt(3, Integer.parseInt(confirmatioNumber));
+            stmt.setInt(3, Integer.parseInt(confirmationNumber));
             stmt.setTime(4, Time.valueOf(to.toLocalTime()));
             stmt.setDate(5, Date.valueOf(to.toLocalDate()));
             stmt.setTime(6, Time.valueOf(from.toLocalTime()));
@@ -491,24 +659,28 @@ public class Query implements Database {
             stmt.setInt(8, vehicle.getOdometer());
             stmt.setString(9, creditCardType);
             stmt.setLong(10, Long.parseLong(creditCardNumber));
-            stmt.setDate(11, Date.valueOf(expiryMonth + "/" + expiryYear));
+            LocalDateTime ldt = LocalDateTime.of(Integer.parseInt(expiryYear), Integer.parseInt(expiryMonth), 1, 4, 5);
+            stmt.setDate(11, Date.valueOf(ldt.toLocalDate()));
             ResultSet rs = stmt.executeQuery();
             int counter = 0;
-            while(rs.next()) {
+            while (rs.next()) {
                 ret = rs.getInt("rid");
                 counter++;
             }
             assert (counter == 1);
             rs.close();
             stmt.close();
+            success = true;
         } catch (SQLException e) {
-            e.printStackTrace();
+            //
         }
+        UI_CONTROLLER.logResponse(new IntegerResponse(query, success, success ? SUCCESS : ERROR, ret));
         return ret;
     }
 
     @Override
     public DatabaseResponse<Rental> getRental(String id) {
+        String response = SUCCESS;
         Rental rental = null;
         String query = "SELECT  r.* \n" +
                 "FROM public.rent r \n" +
@@ -516,6 +688,7 @@ public class Query implements Database {
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setInt(1, Integer.parseInt(id));
+            query = stmt.toString();
             ResultSet rs = stmt.executeQuery();
             int counter = 0;
             while (rs.next()) {
@@ -523,8 +696,8 @@ public class Query implements Database {
                 Time fromTime = rs.getTime("fromtime");
                 Date toDate = rs.getDate("toDate");
                 Time toTime = rs.getTime("toTime");
-                LocalDateTime from = LocalDateTime.parse(fromDate.toString() + " " + fromTime.toString());
-                LocalDateTime to = LocalDateTime.parse(toDate.toString() + " " + toTime.toString());
+                LocalDateTime from = LocalDateTime.of(fromDate.toLocalDate(), fromTime.toLocalTime());
+                LocalDateTime to = LocalDateTime.of(toDate.toLocalDate(), toTime.toLocalTime());
                 String vlicense = rs.getString("vlicense");
                 Long phone = rs.getLong("cellphone");
                 Vehicle vehicle = getVehicle(vlicense).getValue();
@@ -539,21 +712,24 @@ public class Query implements Database {
             rs.close();
             stmt.close();
         } catch (SQLException e) {
-            //
+            response = ERROR;
         }
-        return new RentalResponse(query, rental != null, getResponse(rental != null), rental);
+        return new RentalResponse(query, rental != null, response, rental);
 
     }
 
     @Override
     public VehicleResponse getVehicle(String vlicense) {
+        String response = SUCCESS;
+        boolean success = true;
         String query = "SELECT v.* \n" +
-                "FROM public.vehicle v" +
-                "WHERE v.vlicence = ?";
+                "FROM public.vehicle v \n" +
+                "WHERE v.vlicense = ?";
 
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setString(1, vlicense);
+            query = stmt.toString();
             ResultSet rs = stmt.executeQuery();
             assert (rs != null);
             while (rs.next()) {
@@ -562,43 +738,60 @@ public class Query implements Database {
                 Vehicle returnV = new Vehicle(rs.getInt("vid"), rs.getString("vlicense"),
                         rs.getString("make"), rs.getString("model"),
                         rs.getString("year"), rs.getString("color"),
-                        rs.getInt("odomoter"), status, null, vehicleTypeName);
-                return new VehicleResponse(query, true, getResponse(true), returnV);
+                        rs.getInt("odometer"), status, null, vehicleTypeName);
+                return new VehicleResponse(query, true, response, returnV);
             }
             rs.close();
             stmt.close();
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            success = false;
+            response = ERROR;
         }
-
-        return new VehicleResponse(query, false, getResponse(false), null);
+        if (success) {
+            response = "did not find vehicle";
+        }
+        return new VehicleResponse(query, success, response, null);
     }
 
     @Override
     public DatabaseResponse<String> returnVehicle(String rentalID, String location, LocalDateTime time, String odometer,
                                                   boolean gasTankIsFull, int cost) {
         boolean success = locationExists(location).getValue();
-
-        // UPDATE VEHICLE STATUS
+        String response = SUCCESS;
         Vehicle v = getVehicle(getRental(rentalID).getValue().getVehicle().getvLicense()).getValue();
-        updateVehicleStatus(v, v.getStatus());
 
         String query = "insert into public.return (rid, date, time, odometer, fulltank, value) values (?, ?, ?, ?, ?, ?)";
-        try {
-            PreparedStatement stmt = conn.prepareStatement(query);
-            stmt.setInt(1, Integer.parseInt(rentalID));
-            stmt.setDate(2, Date.valueOf(time.toLocalDate()));
-            stmt.setTime(3, Time.valueOf(time.toLocalTime()));
-            stmt.setInt(4, Integer.parseInt(odometer));
-            stmt.setBoolean(5, gasTankIsFull);
-            stmt.setInt(6, cost);
-            success = stmt.executeUpdate() > 0;
-            stmt.close();
-        } catch (SQLException e) {
-            success = false;
+        if (success) {
+            try {
+                PreparedStatement stmt = conn.prepareStatement(query);
+                stmt.setInt(1, Integer.parseInt(rentalID));
+                stmt.setDate(2, Date.valueOf(time.toLocalDate()));
+                stmt.setTime(3, Time.valueOf(time.toLocalTime()));
+                stmt.setInt(4, Integer.parseInt(odometer));
+                stmt.setBoolean(5, gasTankIsFull);
+                stmt.setInt(6, cost);
+                query = stmt.toString();
+                success = stmt.executeUpdate() > 0;
+                stmt.close();
+            } catch (SQLException e) {
+                if (!e.getSQLState().equals("23505")) {
+                    success = false;
+                    response = ERROR;
+                } else {
+                    success = false;
+                    response = "vehicle already returned";
+                }
+            }
+        } else {
+            response = "invalid location";
         }
-        return new StringResponse(query, success, getResponse(success), getResponse(success));
+        // update VEHICLE STATUS
+        if (updateVehicleStatus(v, v.getStatus())) {
+            return new StringResponse(query, success, response, response);
+        } else {
+            return new StringResponse(query, true, "vehicle status update failed", "");
+        }
     }
 
     @Override
@@ -620,69 +813,57 @@ public class Query implements Database {
     public DatabaseResponse<?> sendQuery(String query) {
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
-            Object ret = stmt.executeQuery();
-            return new DatabaseResponse<>() {
-                @Override
-                public String getQuery() {
-                    return query;
-                }
-
-                @Override
-                public boolean isSuccess() {
-                    return true;
-                }
-
-                @Override
-                public String getResponse() {
-                    return SUCCESS;
-                }
-
-                @Override
-                public Object getValue() {
-                    return ret;
-                }
-            };
+            query = stmt.toString();
+            ResultSet ret = stmt.executeQuery();
+            List<List<String>> str = resultSetString(ret);
+            ret.close();
+            return new StringResponse(query, true, str.toString(), str.toString());
         } catch (SQLException e) {
-            return new DatabaseResponse<>() {
-                @Override
-                public String getQuery() {
-                    return query;
-                }
-
-                @Override
-                public boolean isSuccess() {
-                    return false;
-                }
-
-                @Override
-                public String getResponse() {
-                    return ERROR;
-                }
-
-                @Override
-                public Object getValue() {
-                    return null;
-                }
-            };
+            return new StringResponse(query, false, ERROR, null);
         }
     }
 
+    private List<List<String>> resultSetString(ResultSet rs) {
+        List<List<String>> list = new ArrayList<>();
+        try {
+            int cols = rs.getMetaData().getColumnCount();
+            while (rs.next()) {
+                int counter = cols;
+                List<String> arr = new ArrayList<>();
+                while (counter--> 1) {
+                    arr.add(rs.getString(counter));
+                }
+                list.add(arr);
+            }
+        } catch (SQLException e) {
+            System.out.println("issue");
+            //return list;
+        }
+        return list;
+    }
+
     private IntegerResponse getAllRates(VehicleTypeName type, String rateVar) {
+        //String response = SUCCESS;
+        //boolean success = false;
         String query = "SELECT vt." + rateVar + "\n" +
                 "FROM public.vehicletype vt \n" +
-                "WHERE vt.vtname = ?" +
+                "WHERE vt.vtname = ?\n" +
                 "LIMIT 1";
 
         try {
             PreparedStatement stmt = conn.prepareStatement(query);
             stmt.setString(1, type.getName());
+            query = stmt.toString();
             ResultSet rs = stmt.executeQuery();
+            rs.next();
             int ret = rs.getInt(rateVar);
             rs.close();
             stmt.close();
-            return new IntegerResponse(query, true, getResponse(true), ret);
+            UI_CONTROLLER.logResponse(new IntegerResponse(query, true, SUCCESS, ret));
+            return new IntegerResponse(query, true, SUCCESS, ret);
         } catch (SQLException e) {
-            return new IntegerResponse(query, false, getResponse(false), -1);
+            UI_CONTROLLER.logResponse(new IntegerResponse(query, false, ERROR, -1));
+            return new IntegerResponse(query, false, ERROR, -1);
         }
     }
 
@@ -967,4 +1148,39 @@ public class Query implements Database {
             return value;
         }
     }
+
+//    private class ReservationResponse implements DatabaseResponse<Reservation> {
+//
+//        private String query;
+//        private boolean success;
+//        private String response;
+//        private Reservation value;
+//
+//        ReservationResponse(String query, boolean success, String response, Reservation value) {
+//            this.query = query;
+//            this.success = success;
+//            this.response = response;
+//            this.value = value;
+//        }
+//
+//        @Override
+//        public String getQuery() {
+//            return query;
+//        }
+//
+//        @Override
+//        public boolean isSuccess() {
+//            return success;
+//        }
+//
+//        @Override
+//        public String getResponse() {
+//            return response;
+//        }
+//
+//        @Override
+//        public Reservation getValue() {
+//            return value;
+//        }
+//    }
 }
