@@ -68,7 +68,7 @@
                   </HBox>
                   <HBox>
                      <children>
-                        <Button fx:id="generateReportButton" mnemonicParsing="false" onAction="#showGenerateReportScreen" text="Generate Report" />
+                        <Button fx:id="generateReportMenuButton" mnemonicParsing="false" onAction="#showGenerateReportScreen" text="Generate Report" />
                      </children>
                   </HBox>
                   <HBox>
@@ -586,6 +586,12 @@
                               <TextField fx:id="returnVehicleStatusRentalIDTextField" />
                            </children>
                         </HBox>
+                        <HBox alignment="CENTER_LEFT" layoutX="20.0" layoutY="57.0" spacing="10.0">
+                           <children>
+                              <Label text="Location" />
+                              <TextField fx:id="returnVehicleStatusLocationTextField" />
+                           </children>
+                        </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                            <children>
                               <Label text="Rental End Date" />
@@ -884,7 +890,7 @@
                                           </HBox>
                                           <HBox alignment="CENTER_LEFT" spacing="5.0">
                                              <children>
-                                                <Button fx:id="generateReportButton" mnemonicParsing="false" onAction="#generateReport" text="Generate" />
+                                                <Button fx:id="generateButton" mnemonicParsing="false" onAction="#generateReport" text="Generate" />
                                                 <Label fx:id="generateReportErrorLabel" style="-fx-border-color: red;" text="Label" visible="false" />
                                              </children>
                                           </HBox>
@@ -933,7 +939,7 @@
                            <content>
                               <AnchorPane minHeight="0.0" minWidth="0.0">
                                  <children>
-                                    <VBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="0.0">
+                                    <VBox spacing="10.0">
                                        <children>
                                           <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
                                              <children>

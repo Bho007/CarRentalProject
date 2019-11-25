@@ -75,6 +75,8 @@ public class UIController {
 
     @FXML
     AnchorPane menuPane;
+    @FXML
+    Button generateReportMenuButton;
 
     @FXML
     AnchorPane splashPane;
@@ -248,6 +250,8 @@ public class UIController {
     @FXML
     TextField returnVehicleStatusRentalIDTextField;
     @FXML
+    TextField returnVehicleStatusLocationTextField;
+    @FXML
     DatePicker returnVehicleRentalEndDatePicker;
     @FXML
     TextField returnVehicleEndHourTextField;
@@ -280,7 +284,7 @@ public class UIController {
     @FXML
     TextField generateReportTypeCityTextField;
     @FXML
-    Button generateReportButton;
+    Button generateButton;
     @FXML
     Label generateReportErrorLabel;
     @FXML
@@ -424,6 +428,8 @@ public class UIController {
         durationStartDatePicker.setValue(null);
         durationEndDatePicker.setValue(null);
         durationErrorLabel.setVisible(false);
+        vehiclePaymentInformationCashBox.setVisible(false);
+        vehiclePaymentInformationCashCheckBox.setSelected(false);
 
         if (vehicleTypeSelectionLocationTextField.getText().isBlank()) {
             vehicleTypeSelectionErrorLabel.setVisible(true);
@@ -680,7 +686,7 @@ public class UIController {
             DatabaseResponse<Reservation> confirmationNumber = Main.database.reserveVehicle(driversLicense,
                     phone,
                     vehicleTypeName.equalsIgnoreCase("any") ?
-                            null :
+                            VehicleTypeName.ECONOMY :
                             VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()),
                     location,
                     fromDateTime,
@@ -858,10 +864,20 @@ public class UIController {
             // TODO
             if (vehicleTypeName == null || vehicleTypeName.equalsIgnoreCase("Any")) {
                 paymentInformationErrorLabel.setVisible(true);
-                paymentInformationErrorLabel.setText("Invalid internal state - please start over.");
+                paymentInformationErrorLabel.setText("Invalid internal state (invalid vehicle type)");
                 return;
             } else {
-                DatabaseResponse<String> returnVehicle = Main.database.returnVehicle(rentalID, location, endDateTime, odometer, gasTankIsFull, cost);
+                // DatabaseResponse<String> returnVehicle = Main.database.returnVehicle(rentalID, location, rentalEndDateTime, odometer, gasTankIsFull, cost);
+                // logResponse(returnVehicle);
+                // if (returnVehicle.isSuccess()) {
+                //     confirmationNumberLabel.setText(returnVehicle.getValue());
+                // } else {
+                //     returnVehicleStatusErrorLabel.setVisible(true);
+                //     returnVehicleStatusErrorLabel.setText(returnVehicle.getResponse());
+                //     return;
+                // }
+
+                DatabaseResponse<String> returnVehicle = Main.database.returnVehicle(rentalID, location, rentalEndDateTime, odometer, gasTankIsFull, cost);
                 logResponse(returnVehicle);
 
                 if (!returnVehicle.isSuccess()) {
@@ -895,6 +911,14 @@ public class UIController {
     public void rentVehicle(ActionEvent actionEvent) {
         rentVehicleInitialErrorLabel.setVisible(false);
         makeAllPanesInvisible();
+
+        vehicleTypeSelectionComboBox.getItems().clear();
+        // filterTypeComboBox.getItems().add("Any");
+        Arrays.stream(VehicleTypeName.values())
+                .map(VehicleTypeName::getName)
+                .forEach(e -> filterTypeComboBox.getItems().add(e));
+        vehicleTypeSelectionComboBox.getSelectionModel().selectFirst();
+
         rentVehicleInitialPane.setVisible(true);
         rentVehicleNewCustomerRadioButton.setOnAction(event -> {
             rentVehicleDriversLicenseBox.setVisible(false);
@@ -906,11 +930,16 @@ public class UIController {
             rentVehicleConfirmationNumberBox.setVisible(true);
             rentVehicleLocationBox.setVisible(true);
         });
+
+
         setRental(true);
     }
 
     @FXML
     public void processRental(ActionEvent actionEvent) {
+        vehiclePaymentInformationCashBox.setVisible(false);
+        vehiclePaymentInformationCashCheckBox.setSelected(false);
+
         if (rentVehicleExistingReservationRadioButton.isSelected()) {
             if (rentVehicleConfirmationNumberTextField.getText().isBlank()) {
                 rentVehicleInitialErrorLabel.setVisible(true);
@@ -967,32 +996,58 @@ public class UIController {
                     address = customerResponse.getValue().getAddress();
                 } else {
                     rentVehicleInitialErrorLabel.setVisible(true);
-                    rentVehicleInitialErrorLabel.setText("something went wrong when getting this customer's information");
+                    rentVehicleInitialErrorLabel.setText("Unable to get Customer Information");
                     return;
                 }
             } else {
                 rentVehicleInitialErrorLabel.setVisible(true);
-                rentVehicleInitialErrorLabel.setText("unable to find customer with given driver's license");
+                rentVehicleInitialErrorLabel.setText("Unable to find Customer with given driver's license");
                 return;
             }
 
             // check if reservation or phone number is valid
+            boolean isPhoneNumber = rentVehicleConfirmationNumberTextField.getText().length() >= 10;
+            DatabaseResponse<Reservation> getReservation;
             Reservation reservation;
-            DatabaseResponse<Reservation> getReservationFromConfirmationNumber =
-                    Main.database.getReservationByConfirmationNumber(rentVehicleConfirmationNumberTextField.getText());
-            DatabaseResponse<Reservation> getReservationFromPhone =
-                    Main.database.getReservationByPhoneNumber(rentVehicleConfirmationNumberTextField.getText());
-            logResponse(getReservationFromConfirmationNumber);
-            logResponse(getReservationFromPhone);
-            if (getReservationFromConfirmationNumber.isSuccess()) {
-                reservation = getReservationFromConfirmationNumber.getValue();
-            } else if (getReservationFromPhone.isSuccess()) {
-                reservation = getReservationFromPhone.getValue();
+
+            if (isPhoneNumber) {
+                getReservation = Main.database.getReservationByPhoneNumber(rentVehicleConfirmationNumberTextField.getText());
+                logResponse(getReservation);
+
+                if (getReservation.isSuccess()) {
+                    reservation = getReservation.getValue();
+                } else {
+                    rentVehicleInitialErrorLabel.setVisible(true);
+                    rentVehicleInitialErrorLabel.setText("Unknown reservation for phone number");
+                    return;
+                }
             } else {
-                rentVehicleInitialErrorLabel.setVisible(true);
-                rentVehicleInitialErrorLabel.setText("Unknown reservation or phone number");
-                return;
+                getReservation = Main.database.getReservationByConfirmationNumber(rentVehicleConfirmationNumberTextField.getText());
+                logResponse(getReservation);
+                if (getReservation.isSuccess()) {
+                    reservation = getReservation.getValue();
+                } else {
+                    rentVehicleInitialErrorLabel.setVisible(true);
+                    rentVehicleInitialErrorLabel.setText("Unknown reservation number");
+                    return;
+                }
             }
+
+            // DatabaseResponse<Reservation> getReservationFromConfirmationNumber =
+            //         Main.database.getReservationByConfirmationNumber(rentVehicleConfirmationNumberTextField.getText());
+            // DatabaseResponse<Reservation> getReservationFromPhone =
+            //         Main.database.getReservationByPhoneNumber(rentVehicleConfirmationNumberTextField.getText());
+            // logResponse(getReservationFromConfirmationNumber);
+            // logResponse(getReservationFromPhone);
+            // if (getReservationFromConfirmationNumber.isSuccess()) {
+            //     reservation = getReservationFromConfirmationNumber.getValue();
+            // } else if (getReservationFromPhone.isSuccess()) {
+            //     reservation = getReservationFromPhone.getValue();
+            // } else {
+            //     rentVehicleInitialErrorLabel.setVisible(true);
+            //     rentVehicleInitialErrorLabel.setText("Unknown reservation or phone number");
+            //     return;
+            // }
 
             if (!String.valueOf(reservation.getCellPhone()).equals(phone)) {
                 rentVehicleInitialErrorLabel.setVisible(true);
@@ -1004,6 +1059,7 @@ public class UIController {
             confirmationNumber = String.valueOf(reservation.getConfNo());
             fromDateTime = reservation.getFrom();
             endDateTime = reservation.getTo();
+            location = rentVehicleLocationTextField.getText();
 
             // moved to payment
             // DatabaseResponse<Rental> rentalConfirmation = Main.database.rentVehicle(driversLicense, phone, confirmationNumber, VehicleTypeName.valueOf(vehicleTypeName.toUpperCase()), location, fromDateTime, endDateTime, creditCardNumber, expiryMonth, expiryYear, creditCardType);
@@ -1022,11 +1078,11 @@ public class UIController {
         if (rentVehicleNewCustomerRadioButton.isSelected()) {
             vehicleTypeSelectionTitleLabel.setText("Rent Vehicles");
             if (vehicleTypeSelectionComboBox.getItems().isEmpty()) {
-                vehicleTypeSelectionComboBox.getItems().add("Any");
-                vehicleTypeSelectionComboBox.getSelectionModel().selectFirst();
+                // vehicleTypeSelectionComboBox.getItems().add("Any");
                 Arrays.stream(VehicleTypeName.values())
                         .map(VehicleTypeName::getName)
                         .forEach(e -> vehicleTypeSelectionComboBox.getItems().add(e));
+                vehicleTypeSelectionComboBox.getSelectionModel().selectFirst();
             }
             vehicleTypeSelectionPane.setVisible(true);
         } else {
@@ -1099,6 +1155,12 @@ public class UIController {
             return;
         }
 
+        if (returnVehicleStatusLocationTextField.getText().isBlank()) {
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Missing location");
+            return;
+        }
+
         if (returnVehicleRentalEndDatePicker.getValue() == null) {
             returnVehicleStatusErrorLabel.setVisible(true);
             returnVehicleStatusErrorLabel.setText("Invalid Rental End Date");
@@ -1129,12 +1191,29 @@ public class UIController {
             return;
         }
 
+        DatabaseResponse<Boolean> locationExists = Main.database.locationExists(returnVehicleStatusLocationTextField.getText());
+        logResponse(locationExists);
+
+        if (locationExists.isSuccess()) {
+            if (!locationExists.getValue()) {
+                returnVehicleStatusErrorLabel.setVisible(true);
+                returnVehicleStatusErrorLabel.setText("Location does not exist");
+                return;
+            }
+        } else {
+            returnVehicleStatusErrorLabel.setVisible(true);
+            returnVehicleStatusErrorLabel.setText("Unable to get location data from database");
+            return;
+        }
+
+        odometer = returnVehicleOdometerTextField.getText();
+        location = returnVehicleStatusLocationTextField.getText();
+
         rentalID = returnVehicleStatusRentalIDTextField.getText();
         rentalEndDate = returnVehicleRentalEndDatePicker.getValue().toString();
         rentalEndHour = returnVehicleEndHourTextField.getText();
         rentalEndMinute = returnVehicleEndMinuteTextField.getText();
         rentalEndPeriod = returnVehiclePeriodComboBox.getSelectionModel().getSelectedItem();
-
 
         int hour = Integer.parseInt(rentalEndHour) % 12;
         hour = hour + (rentalEndPeriod.equals("am") ? 0 : 12);
@@ -1167,16 +1246,6 @@ public class UIController {
                 if (!updateCosts) {
                     return;
                 }
-
-                DatabaseResponse<String> returnVehicle = Main.database.returnVehicle(rentalID, location, rentalEndDateTime, odometer, gasTankIsFull, cost);
-                logResponse(returnVehicle);
-                if (returnVehicle.isSuccess()) {
-                    confirmationNumberLabel.setText(returnVehicle.getValue());
-                } else {
-                    returnVehicleStatusErrorLabel.setVisible(true);
-                    returnVehicleStatusErrorLabel.setText("Something went wrong when returning the vehicle - please start over");
-                    return;
-                }
             }
         } else {
             returnVehicleStatusErrorLabel.setVisible(true);
@@ -1184,11 +1253,11 @@ public class UIController {
             return;
         }
 
-        // set confirmation for return
-        boolean updateCosts = computeCost();
-        if (!updateCosts) {
-            return;
-        }
+        // // set confirmation for return
+        // boolean updateCosts = computeCost();
+        // if (!updateCosts) {
+        //     return;
+        // }
 
         confirmationNumberLabel.setText(String.valueOf(rental.getValue().getRid()));
         confirmationCustomerNameLabel.setText(name);
@@ -1198,6 +1267,7 @@ public class UIController {
 
         makeAllPanesInvisible();
         paymentInformationPane.setVisible(true);
+        vehiclePaymentInformationCashBox.setVisible(true);
         if (vehiclePaymentInformationCreditCardExpiryMonthComboBox.getSelectionModel().isEmpty()) {
             vehiclePaymentInformationCreditCardTypeComboBox.getItems().add("VISA");
             vehiclePaymentInformationCreditCardTypeComboBox.getSelectionModel().selectFirst();
@@ -1398,7 +1468,7 @@ public class UIController {
             int hourlyRate = hourlyRateResponse.getValue();
             int dailyRate = dailyRateResponse.getValue();
             int weeklyRate = weeklyRateResponse.getValue();
-            int computedCost = (int) (weeklyRate * weeks + dailyRate * dailyRate + hourlyRate * hours);
+            int computedCost = (int) (weeklyRate * weeks + dailyRate * days + hourlyRate * hours);
 
             String costBreakdown = "$" + computedCost + "\n" +
                     "(" +

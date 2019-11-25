@@ -811,12 +811,13 @@ public class Query implements Database {
             while (rs.next()) {
                 int counter = cols;
                 List<String> arr = new ArrayList<>();
-                while (counter--> 0) {
+                while (counter--> 1) {
                     arr.add(rs.getString(counter));
                 }
                 list.add(arr);
             }
         } catch (SQLException e) {
+            System.out.println("issue");
             //return list;
         }
         return list;
