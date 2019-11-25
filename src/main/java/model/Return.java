@@ -4,11 +4,16 @@ import java.sql.Date;
 import java.sql.Time;
 
 public class Return {
+    private int rid;
     private Date date;
     private Time time;
     private int odometer;
     private boolean fullTank;
     private int value;
+
+    public int getRid() {
+        return rid;
+    }
 
     public Date getDate() {
         return date;
@@ -30,7 +35,8 @@ public class Return {
         return value;
     }
 
-    public Return(Date date, Time time, int odometer, boolean fullTank, int value) {
+    public Return(int rid, Date date, Time time, int odometer, boolean fullTank, int value) {
+        this.rid = rid;
         this.date = date;
         this.time = time;
         this.odometer = odometer;
