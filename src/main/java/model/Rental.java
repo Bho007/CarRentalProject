@@ -30,7 +30,8 @@ public class Rental {
         this.cardName = cardName;
         this.cardNo = cardNo;
         this.cardExpiryDate = cardExpiryDate;
-        this.equipment = new ArrayList<>();
+        this.equipment = equipment;
+        this.reservation = reservation;
     }
 
     public void addReservation(Reservation r) {
